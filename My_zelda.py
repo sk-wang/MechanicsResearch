@@ -9,24 +9,26 @@ import time
 import tracery
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.structure import *
-global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules
+global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules,template
 red = 3
 green = 2
 blue = 1
 #neuralnetworkForAgent
 key = 0
 rules = []
+template = all_the_text = open('/Users/skwang/MechanicsResearch/template.py').read()
+print template
 random.seed(time.time())
 for i in range(100):
   rules.append("")
 moveType = ['Immovable','CounterClockwiseSprite','ClockwiseSprite','RandomNPC','RandomNPCHorizontal','RandomNPCVertical']
 interactionType = ['none','killSprite','killPartner','teleportPartner','teleportSprite','teleportBoth','killBoth']
-linkType = ['NNSprite israndom=0','ShootNNSprite stype=sword israndom=0','ShootNNSprite stype=bullet israndom=0','ShootNNSprite stype=wall israndom=0']
+#linkType = ['NNSprite israndom=0','ShootNNSprite stype=sword israndom=0','ShootNNSprite stype=bullet israndom=0','ShootNNSprite stype=wall israndom=0']
 linkRule = {
     'link': '#agentType# stype=#stype# israndom=#israndom# ismove=#ismove#',
     'agentType': ['NNSprite', 'ShootNNSprite'],
     'stype': ['sword', 'wall', 'bullet'],
-    'israndom': ['0','1'],
+    'israndom': ['0'],
     'ismove':['0','1']
 }
 grammar = tracery.Grammar(linkRule)
@@ -87,7 +89,7 @@ BasicGame
     Timeout limit={timelimit} win=True
     Scoreout limit={scorelimit} win=True
 """
-def evaluate(fnn,iteration=20,isScreen=False):
+def evaluate(fnn,iteration=1,isScreen=False):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit
   if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -137,7 +139,7 @@ def evaulateGame():
   rules[3] = 'NNSprite israndom=1'
   setRule(rules)
   print "randomNNSprite"
-  for i in range(20):
+  for i in range(5):
     avg += evaluate(net)
   """
   rules[3] = 'ShootNNSprite stype=sword israndom=1'
@@ -245,6 +247,21 @@ initial()
 eva,net = evaulateGame()
 f = open('/Users/skwang/Desktop/stats', 'a+')
 print >> f,now_zelda_game,net,net.params,eva,red,blue,green
+"""
+nowgame = template
+nowgame = nowgame.replace('{red}',str(red))
+nowgame = nowgame.replace('{blue}',str(blue))
+nowgame = nowgame.replace('{green}',str(green))
+nowgame = nowgame.replace('{game}',now_zelda_game)
+netStr = '['
+for weigh in net.params:
+  netStr = netStr + str(weigh) + ','
+netStr = netStr[0:len(netStr)-2] + ']'
+nowgame = nowgame.replace('{net}',netStr)
+f = open('/Users/skwang/MechanicsResearch/'+str(int(time.time())) + '.py', 'w+')
+print >> f,nowgame
+print "written"
+"""
 lastEva = eva
 lastrules = rules
 nogame = 0
@@ -318,6 +335,19 @@ while(i < 999999):
     lastrules = thisrules
     f = open('/Users/skwang/Desktop/stats', 'a+')
     print >> f,now_zelda_game,net,net.params,eva,red,blue,green
+    nowgame = template
+    nowgame = nowgame.replace('{red}',str(red))
+    nowgame = nowgame.replace('{blue}',str(blue))
+    nowgame = nowgame.replace('{green}',str(green))
+    nowgame = nowgame.replace('{game}',now_zelda_game)
+    netStr = '['
+    for weigh in net.params:
+      netStr = netStr + str(weigh) + ','
+    netStr = netStr[0:len(netStr)-2] + ']'
+    nowgame = nowgame.replace('{net}',netStr)
+    g = open('/Users/skwang/MechanicsResearch/'+str(int(time.time())) + '.py', 'w+')
+    print >> g,nowgame
+    print "written"
     nogame = 0
   else:
     setRule(lastrules)
