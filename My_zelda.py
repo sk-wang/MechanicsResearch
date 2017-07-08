@@ -215,7 +215,7 @@ def evaluate(fnn,iteration=5,isScreen=False):
           break
       zelda_this_level = ''.join(zelda_level_list)
       #print zelda_this_level
-      game = VGDLParser.playGame(now_zelda_game, zelda_this_level, fnn = fnn , isScreen=True)
+      game = VGDLParser.playGame(now_zelda_game, zelda_this_level, fnn = fnn , isScreen=False)
       TotalScore += (game.score/float(scorelimit))
     return TotalScore/float(iteration)
 
@@ -415,8 +415,8 @@ def initial():
 #start
 initial()
 eva,net = evaulateGame()
-f = open('/Users/skwang/Desktop/stats', 'a+')
-print >> f,now_zelda_game,net,net.params,eva,red,blue,green
+#f = open('/Users/skwang/Desktop/stats', 'a+')
+#print >> f,now_zelda_game,net,net.params,eva,red,blue,green
 """
 nowgame = template
 nowgame = nowgame.replace('{red}',str(red))
@@ -440,7 +440,7 @@ while(i < 999999):
   i = i + 1
   thisrules = lastrules
   #mutate
-  print >> f,'Generation'+str(i)+':'
+  #print >> f,'Generation'+str(i)+':'
   if(int(random.uniform(1,27)) == 3):
     thisrules[0] = random.choice(moveType)
   if(int(random.uniform(1,27)) == 3):  
