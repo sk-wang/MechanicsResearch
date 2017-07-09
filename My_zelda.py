@@ -11,6 +11,23 @@ import os
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.structure import *
 global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules,template,mapgenerator,nowlevel
+global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
+#rulelimit
+scorelimit = range(5,21,1)
+redlimit = range(5,31,1)
+greenlimit = range(5,31,1)
+bluelimit = range(5,31,1)
+timelimit = range(20,100,1)
+damagelimit = range(1,11,1)
+widthlimit = range(16,25,1)
+brithlimit = range(4,6,1)
+deadlimit = range(4,6,1)
+initialrate = range(3,6,1)
+key = 0
+for rate in initialrate:
+  initialrate[key] = float(rate)/10.
+  key+=1
+dosteplimit = range(1,7,1)
 class generatedMap(object):
   width =64
   brithlimit = 4
@@ -259,8 +276,8 @@ def evaulateGame():
   algo = SNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
   #algo = GA(lambda x: evaluate(x), net, verbose=True)
   #algo = OriginalNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
-  episodesPerStep = 5
-  for i in range(10):
+  episodesPerStep = 2
+  for i in range(5):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -278,6 +295,7 @@ def evaulateGame():
   return best,net
 def setRule(thisrules):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules,mapgenerator
+  global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
   rules = thisrules
   print thisrules
   now_zelda_game = zelda_game
@@ -334,6 +352,7 @@ def setRule(thisrules):
   mapgenerator = generatedMap(width=thisrules[45],brithlimit=thisrules[46],deadlimit=thisrules[47],density=thisrules[48],simulationtime=thisrules[49])
 def initial():
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules
+  global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
   #initial
   rules[0] = random.choice(moveType)
   rules[1] = random.choice(moveType)
@@ -376,39 +395,40 @@ def initial():
   rules[20] = str(random.choice(score))
   rules[21] = str(random.choice(score))
   #score limit from paper
-  rules[22] = int(random.uniform(1,10))
+  rules[22] = random.choice(scorelimit)
   #red green blue from my own experience
-  rules[23] = int(random.uniform(5,30))
-  rules[24] = int(random.uniform(5,30))
-  rules[25] = int(random.uniform(5,30))
-  rules[26] = str(int(random.uniform(50,100)))
+  rules[23] = random.choice(redlimit)
+  rules[24] = random.choice(greenlimit)
+  rules[25] = random.choice(bluelimit)
+  #timelimit accoring to my own experience
+  rules[26] = str(random.choice(timelimit))
 
-  #damage
-  rules[27]= str(int(random.uniform(1,10)))
-  rules[28]= str(int(random.uniform(1,10)))
-  rules[29]= str(int(random.uniform(1,10)))
-  rules[30]= str(int(random.uniform(1,10)))
-  rules[31]= str(int(random.uniform(1,10)))
-  rules[32]= str(int(random.uniform(1,10)))
-  rules[33]= str(int(random.uniform(1,10)))
-  rules[34]= str(int(random.uniform(1,10)))
-  rules[35]= str(int(random.uniform(1,10)))
-  rules[36]= str(int(random.uniform(1,10)))
-  rules[37]= str(int(random.uniform(1,10)))
-  rules[38]= str(int(random.uniform(1,10)))
-  rules[39]= str(int(random.uniform(1,10)))
-  rules[40]= str(int(random.uniform(1,10)))
-  rules[41]= str(int(random.uniform(1,10)))
-  rules[42]= str(int(random.uniform(1,10)))
-  rules[43]= str(int(random.uniform(1,10)))
-  rules[44]= str(int(random.uniform(1,10)))
+  #damage from my own experience
+  rules[27]= str(random.choice(damagelimit))
+  rules[28]= str(random.choice(damagelimit))
+  rules[29]= str(random.choice(damagelimit))
+  rules[30]= str(random.choice(damagelimit))
+  rules[31]= str(random.choice(damagelimit))
+  rules[32]= str(random.choice(damagelimit))
+  rules[33]= str(random.choice(damagelimit))
+  rules[34]= str(random.choice(damagelimit))
+  rules[35]= str(random.choice(damagelimit))
+  rules[36]= str(random.choice(damagelimit))
+  rules[37]= str(random.choice(damagelimit))
+  rules[38]= str(random.choice(damagelimit))
+  rules[39]= str(random.choice(damagelimit))
+  rules[40]= str(random.choice(damagelimit))
+  rules[41]= str(random.choice(damagelimit))
+  rules[42]= str(random.choice(damagelimit))
+  rules[43]= str(random.choice(damagelimit))
+  rules[44]= str(random.choice(damagelimit))
 
-  #level
-  rules[45]= int(random.uniform(16,64))
-  rules[46]= int(random.uniform(4,5))
-  rules[47]= int(random.uniform(4,5))
-  rules[48]= random.uniform(0.3,0.5)
-  rules[49]= int(random.uniform(1,6))
+  #level from page https://gamedevelopment.tutsplus.com/tutorials/generate-random-cave-levels-using-cellular-automata--gamedev-9664
+  rules[45]= random.choice(widthlimit)
+  rules[46]= random.choice(brithlimit)
+  rules[47]= random.choice(deadlimit)
+  rules[48]= random.choice(initialrate)
+  rules[49]= random.choice(dosteplimit)
   setRule(rules)
   #randomGame
   
@@ -489,63 +509,63 @@ while(i < 999999):
     thisrules[21] = str(random.choice(score))
   #limit
   if(int(random.uniform(1,27)) == 3):
-    thisrules[22] = int(random.uniform(1,10))
+    thisrules[22] = int(random.choice(scorelimit))
   if(int(random.uniform(1,27)) == 3):  
-    thisrules[23] = int(random.uniform(5,30))
+    thisrules[23] = int(random.choice(redlimit))
   if(int(random.uniform(1,27)) == 3):  
-    thisrules[24] = int(random.uniform(5,30))
+    thisrules[24] = int(random.choice(greenlimit))
   if(int(random.uniform(1,27)) == 3):  
-    thisrules[25] = int(random.uniform(5,30))
+    thisrules[25] = int(random.choice(bluelimit))
   if(int(random.uniform(1,27)) == 3):  
-    thisrules[26] = str(int(random.uniform(50,100)))
+    thisrules[26] = str(random.choice(timelimit))
   #damage
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[27]= str(int(random.uniform(1,10)))
+    thisrules[27]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[28]= str(int(random.uniform(1,10)))
+    thisrules[28]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[29]= str(int(random.uniform(1,10)))
+    thisrules[29]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[30]= str(int(random.uniform(1,10)))
+    thisrules[30]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[31]= str(int(random.uniform(1,10)))
+    thisrules[31]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[32]= str(int(random.uniform(1,10)))
+    thisrules[32]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[33]= str(int(random.uniform(1,10)))
+    thisrules[33]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[34]= str(int(random.uniform(1,10)))
+    thisrules[34]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[35]= str(int(random.uniform(1,10)))
+    thisrules[35]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[36]= str(int(random.uniform(1,10)))
+    thisrules[36]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[37]= str(int(random.uniform(1,10)))
+    thisrules[37]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[38]= str(int(random.uniform(1,10)))
+    thisrules[38]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[39]= str(int(random.uniform(1,10)))
+    thisrules[39]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[40]= str(int(random.uniform(1,10)))
+    thisrules[40]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[41]= str(int(random.uniform(1,10)))
+    thisrules[41]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[42]= str(int(random.uniform(1,10)))
+    thisrules[42]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[43]= str(int(random.uniform(1,10)))
+    thisrules[43]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[44]= str(int(random.uniform(1,10)))
+    thisrules[44]= str(random.choice(damagelimit))
   #level
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[45]= int(random.uniform(16,64))
+    thisrules[45]= int(random.choice(widthlimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[46]= int(random.uniform(2,5))
+    thisrules[46]= int(random.choice(brithlimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[47]= int(random.uniform(2,5))
+    thisrules[47]= int(random.choice(deadlimit))
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[48]= random.uniform(0.2,0.8)
+    thisrules[48]= random.choice(initialrate)
   if(int(random.uniform(1,27)) == 3): 
-    thisrules[49]= int(random.uniform(1,6))
+    thisrules[49]= int(random.choice(dosteplimit))
   setRule(thisrules)  
   eva,net = evaulateGame()
   if(eva > lastEva):
