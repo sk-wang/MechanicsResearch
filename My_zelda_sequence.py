@@ -14,10 +14,10 @@ global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules,tem
 global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
 #rulelimit
 scorelimit = range(5,21,1)
-redlimit = range(5,31,1)
-greenlimit = range(5,31,1)
-bluelimit = range(5,31,1)
-timelimit = range(20,100,1)
+redlimit = range(2,10,1)
+greenlimit = range(2,10,1)
+bluelimit = range(2,10,1)
+timelimit = range(50,200,1)
 damagelimit = range(1,11,1)
 widthlimit = range(16,25,1)
 brithlimit = range(4,6,1)
@@ -89,10 +89,17 @@ class generatedMap(object):
     #connect
     for i in range(self.simulationtime):
         level_list = self.doSimulationStep(level_list)
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
+    zelda_level = zelda_level + '\n'
     for i in range(self.width * self.width):
+      if(i % self.width == 0):
+        zelda_level = zelda_level + 'x'
       zelda_level = zelda_level + level_list[i]
       if(i % self.width == self.width - 1):
-        zelda_level = zelda_level + '\n'
+        zelda_level = zelda_level + 'x\n'
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
     return zelda_level
 pos = int(random.uniform(0,49))
 threadnumber = int(random.uniform(0,99999999999))
@@ -109,15 +116,15 @@ print template
 random.seed(time.time())
 for i in range(100):
   rules.append("")
-moveType = ['Immovable','CounterClockwiseSprite','ClockwiseSprite','RandomNPC','RandomNPCHorizontal','RandomNPCVertical']
+moveType = ['Immovable','CounterClockwiseSprite','ClockwiseSprite','RandomNPC','Chaser stype=link']
 interactionType = ['no','killSprite','killPartner','teleportPartner','teleportSprite','teleportBoth','killBoth']
 #linkType = ['NNSprite israndom=0','ShootNNSprite stype=sword israndom=0','ShootNNSprite stype=bullet israndom=0','ShootNNSprite stype=wall israndom=0']
 linkRule = {
     'link': '#agentType# stype=#stype# israndom=#israndom# ismove=#ismove#',
     'agentType': ['ShootNNSprite'],
-    'stype': ['sword','wall','bullet','nothing','red','blue','green'],
+    'stype': ['sword','bullet'],
     'israndom': ['0'],
-    'ismove':['0','1']
+    'ismove':['1']
 }
 grammar = tracery.Grammar(linkRule)
 #according to paper
@@ -143,24 +150,27 @@ wwwwwwwwwwwwwwww
 zelda_game = """
 BasicGame
   SpriteSet  
-    sword > Flicker limit=5 singleton=True color=BLACK
+    sword > Flicker limit=0.05 singleton=True color=BLACK
     bullet > Bullet
       leftbullet > orientation=LEFT speed=0.5  color=YELLOW
       rightbullet > orientation=RIGHT speed=0.5  color=YELLOW
       upbullet > orientation=UP speed=0.5  color=YELLOW
       downbullet > orientation=DOWN speed=0.5  color=YELLOW
     movable >        
-      red  > {redmove} color=RED
-      green > {greenmove} color=GREEN
-      blue > {bluemove} color=BLUE
+      red  > {redmove} color=RED cooldown=2
+      green > {greenmove} color=GREEN cooldown=2
+      blue > {bluemove} color=BLUE cooldown=2
       link  > {linkmove} color=WHITE scooldown=5
+    boundary > Immovable color=BLACK
   LevelMapping
     R > red
     G > green
     B > blue
-    L > link            
+    L > link  
+    x > boundary          
   InteractionSet
     movable wall  > stepBack
+    movable boundary > stepBack
     red green > {redgreen} score=0 sdam={redgreensdam} pdam={redgreenpdam}
     red blue > {redblue} score=0 sdam={redbluesdam} pdam={redbluepdam}
     green blue > {greenblue} score=0 sdam={greenbluesdam} pdam={greenbluepdam}
@@ -170,9 +180,11 @@ BasicGame
     sword red > killBoth score={swordredScore} pdam={swordredpdam}
     sword blue > killBoth score={swordblueScore} pdam={swordbluepdam}
     sword green > killBoth score={swordgreenScore} pdam={swordgreenpdam}
+    sword wall > killBoth  
     bullet red > killBoth score={bulletredScore} pdam={bulletredpdam}
     bullet blue > killBoth score={bulletblueScore} pdam={bulletbluepdam}
-    bullet green > killBoth score={bulletgreenScore} pdam={bulletgreenpdam}         
+    bullet green > killBoth score={bulletgreenScore} pdam={bulletgreenpdam} 
+    bullet wall > killBoth      
   TerminationSet
     LinkDead score=-1 win=False
     Timeout limit={timelimit} win=True
@@ -234,7 +246,7 @@ def evaluate(fnn,iteration=5,isScreen=False):
           break
       zelda_this_level = ''.join(zelda_level_list)
       #print zelda_this_level
-      game = VGDLParser.playGame(now_zelda_game, zelda_this_level, fnn = fnn , isScreen=False)
+      game = VGDLParser.playGame(now_zelda_game, zelda_this_level, fnn = fnn , isScreen=True)
       TotalScore += (game.score/float(scorelimit))
     return TotalScore/float(iteration)
 
@@ -312,6 +324,7 @@ def evaulateGame():
     if algo.bestEvaluation > best:
       best = algo.bestEvaluation
   #Standard NES
+  """
   net = buildNetwork(108,10,8,hiddenclass=SigmoidLayer)
   algo = OriginalNES(lambda x: evaluate(x), net, verbose=True)
   episodesPerStep = 2
@@ -327,8 +340,64 @@ def evaulateGame():
     g.close()
     if algo.bestEvaluation > best:
       best = algo.bestEvaluation
+  """
   print now_zelda_game
   return best,net
+def getGameByRule(thisrules):
+  global zelda_game
+  #print thisrules
+  this_zelda_game = zelda_game
+  this_zelda_game = now_zelda_game.replace('{redmove}',thisrules[0])
+  this_zelda_game = now_zelda_game.replace('{greenmove}',thisrules[1])
+  this_zelda_game = now_zelda_game.replace('{bluemove}',thisrules[2])
+  this_zelda_game = now_zelda_game.replace('{linkmove}',thisrules[3])
+  #interaction
+  this_zelda_game = now_zelda_game.replace('{redgreen}',thisrules[4])
+  this_zelda_game = now_zelda_game.replace('{redblue}',thisrules[5])
+  this_zelda_game = now_zelda_game.replace('{greenblue}',thisrules[6])
+  this_zelda_game = now_zelda_game.replace('{redlink}',thisrules[7])
+  this_zelda_game = now_zelda_game.replace('{bluelink}',thisrules[8])
+  this_zelda_game = now_zelda_game.replace('{greenlink}',thisrules[9])
+  #score
+  this_zelda_game = now_zelda_game.replace('{redgreenScore}',thisrules[10])
+  this_zelda_game = now_zelda_game.replace('{redblueScore}',thisrules[11])
+  this_zelda_game = now_zelda_game.replace('{greenblueScore}',thisrules[12])
+  this_zelda_game = now_zelda_game.replace('{redlinkScore}',thisrules[13])
+  this_zelda_game = now_zelda_game.replace('{greenlinkScore}',thisrules[14])
+  this_zelda_game = now_zelda_game.replace('{bluelinkScore}',thisrules[15])
+  this_zelda_game = now_zelda_game.replace('{swordgreenScore}',thisrules[16])
+  this_zelda_game = now_zelda_game.replace('{swordblueScore}',thisrules[17])
+  this_zelda_game = now_zelda_game.replace('{swordredScore}',thisrules[18])
+  this_zelda_game = now_zelda_game.replace('{bulletgreenScore}',thisrules[19])
+  this_zelda_game = now_zelda_game.replace('{bulletblueScore}',thisrules[20])
+  this_zelda_game = now_zelda_game.replace('{bulletredScore}',thisrules[21])
+  #limit
+  scorelimit = thisrules[22]
+  red = thisrules[23]
+  blue = thisrules[24]
+  green = thisrules[25]
+  this_zelda_game = now_zelda_game.replace('{timelimit}',thisrules[26])
+  this_zelda_game = now_zelda_game.replace('{scorelimit}',str(scorelimit))
+  #damage
+  this_zelda_game = now_zelda_game.replace('{redgreensdam}',thisrules[27])
+  this_zelda_game = now_zelda_game.replace('{redgreenpdam}',thisrules[28])
+  this_zelda_game = now_zelda_game.replace('{redbluesdam}',thisrules[29])
+  this_zelda_game = now_zelda_game.replace('{redbluepdam}',thisrules[30])
+  this_zelda_game = now_zelda_game.replace('{greenbluesdam}',thisrules[31])
+  this_zelda_game = now_zelda_game.replace('{greenbluepdam}',thisrules[32])
+  this_zelda_game = now_zelda_game.replace('{redlinksdam}',thisrules[33])
+  this_zelda_game = now_zelda_game.replace('{redlinkpdam}',thisrules[34])
+  this_zelda_game = now_zelda_game.replace('{greenlinksdam}',thisrules[35])
+  this_zelda_game = now_zelda_game.replace('{greenlinkpdam}',thisrules[36])
+  this_zelda_game = now_zelda_game.replace('{bluelinksdam}',thisrules[37])
+  this_zelda_game = now_zelda_game.replace('{bluelinkpdam}',thisrules[38])
+  this_zelda_game = now_zelda_game.replace('{swordredpdam}',thisrules[39])
+  this_zelda_game = now_zelda_game.replace('{swordgreenpdam}',thisrules[40])
+  this_zelda_game = now_zelda_game.replace('{swordbluepdam}',thisrules[41])
+  this_zelda_game = now_zelda_game.replace('{bulletredpdam}',thisrules[42])
+  this_zelda_game = now_zelda_game.replace('{bulletgreenpdam}',thisrules[43])
+  this_zelda_game = now_zelda_game.replace('{bulletbluepdam}',thisrules[44])
+  return "red is" + str(red) + "\ngreen is" + str(green) + "\nblue is" + str(blue) + "\n" + this_zelda_game + "\nwidth is" + str(thisrules[45]) + "\nbirthlimit is" + str(thisrules[46]) + "\ndeadlimit is" + str(thisrules[47]) + "\ninitial rate is" + str(thisrules[48]) + "\ndoStep is" + str(thisrules[49])
 def setRule(thisrules):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules,mapgenerator
   rules = thisrules
@@ -507,7 +576,7 @@ while(i < 999999):
   if(pos == 0):
     thisrules[pos] = moveType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(moveType) - 1):
@@ -518,7 +587,7 @@ while(i < 999999):
   elif(pos == 1):  
     thisrules[pos] = moveType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(moveType) - 1):
@@ -529,7 +598,7 @@ while(i < 999999):
   elif(pos == 2):  
     thisrules[pos] = moveType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(moveType) - 1):
@@ -540,7 +609,7 @@ while(i < 999999):
   elif(pos == 4):
     thisrules[pos] = interactionType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(interactionType) - 1):
@@ -551,7 +620,7 @@ while(i < 999999):
   elif(pos == 5):
     thisrules[pos] = interactionType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(interactionType) - 1):
@@ -562,7 +631,7 @@ while(i < 999999):
   elif(pos == 6):
     thisrules[pos] = interactionType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(interactionType) - 1):
@@ -573,7 +642,7 @@ while(i < 999999):
   elif(pos == 7):
     thisrules[pos] = interactionType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(interactionType) - 1):
@@ -584,7 +653,7 @@ while(i < 999999):
   elif(pos == 8):
     thisrules[pos] = interactionType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(interactionType) - 1):
@@ -595,7 +664,7 @@ while(i < 999999):
   elif(pos == 9):
     thisrules[pos] = interactionType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(interactionType) - 1):
@@ -607,7 +676,7 @@ while(i < 999999):
   elif(pos == 10):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -618,7 +687,7 @@ while(i < 999999):
   elif(pos == 11):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -629,7 +698,7 @@ while(i < 999999):
   elif(pos == 12):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -640,7 +709,7 @@ while(i < 999999):
   elif(pos == 13):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -651,7 +720,7 @@ while(i < 999999):
   elif(pos == 14):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -662,7 +731,7 @@ while(i < 999999):
   elif(pos == 15):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -673,7 +742,7 @@ while(i < 999999):
   elif(pos == 16):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -684,7 +753,7 @@ while(i < 999999):
   elif(pos == 17):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -695,7 +764,7 @@ while(i < 999999):
   elif(pos == 18):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -706,7 +775,7 @@ while(i < 999999):
   elif(pos == 19):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -717,7 +786,7 @@ while(i < 999999):
   elif(pos == 20):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -728,7 +797,7 @@ while(i < 999999):
   elif(pos == 21):
     thisrules[pos] = str(score[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(score) - 1):
@@ -741,7 +810,7 @@ while(i < 999999):
     scorelimit = range(10,101,1)
     thisrules[pos] = scorelimit[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(scorelimit) - 1):
@@ -752,7 +821,7 @@ while(i < 999999):
   elif(pos == 23):
     thisrules[pos] = redlimit[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(redlimit) - 1):
@@ -763,7 +832,7 @@ while(i < 999999):
   elif(pos == 24):
     thisrules[pos] = greenlimit[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(greenlimit) - 1):
@@ -774,7 +843,7 @@ while(i < 999999):
   elif(pos == 25):
     thisrules[pos] = bluelimit[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(bluelimit) - 1):
@@ -785,7 +854,7 @@ while(i < 999999):
   elif(pos == 26):
     thisrules[pos] = str(timelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(timelimit) - 1):
@@ -797,7 +866,7 @@ while(i < 999999):
   elif(pos == 27):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -808,7 +877,7 @@ while(i < 999999):
   elif(pos == 28):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -819,7 +888,7 @@ while(i < 999999):
   elif(pos == 29):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -830,7 +899,7 @@ while(i < 999999):
   elif(pos == 30):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -841,7 +910,7 @@ while(i < 999999):
   elif(pos == 31):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -852,7 +921,7 @@ while(i < 999999):
   elif(pos == 32):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -863,7 +932,7 @@ while(i < 999999):
   elif(pos == 33):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -874,7 +943,7 @@ while(i < 999999):
   elif(pos == 34):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -885,7 +954,7 @@ while(i < 999999):
   elif(pos == 35):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -896,7 +965,7 @@ while(i < 999999):
   elif(pos == 36):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -907,7 +976,7 @@ while(i < 999999):
   elif(pos == 37):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -918,7 +987,7 @@ while(i < 999999):
   elif(pos == 38):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -929,7 +998,7 @@ while(i < 999999):
   elif(pos == 39):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -940,7 +1009,7 @@ while(i < 999999):
   elif(pos == 40):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -951,7 +1020,7 @@ while(i < 999999):
   elif(pos == 41):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -962,7 +1031,7 @@ while(i < 999999):
   elif(pos == 42):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -973,7 +1042,7 @@ while(i < 999999):
   elif(pos == 43):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -984,7 +1053,7 @@ while(i < 999999):
   elif(pos == 44):
     thisrules[pos] = str(damagelimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(damagelimit) - 1):
@@ -996,7 +1065,7 @@ while(i < 999999):
   elif(pos == 45):
     thisrules[pos] = widthlimit[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(widthlimit) - 1):
@@ -1007,7 +1076,7 @@ while(i < 999999):
   elif(pos == 46):
     thisrules[pos] = brithlimit[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(brithlimit) - 1):
@@ -1018,7 +1087,7 @@ while(i < 999999):
   elif(pos == 47):
     thisrules[pos] = deadlimit[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(deadlimit) - 1):
@@ -1029,7 +1098,7 @@ while(i < 999999):
   elif(pos == 48):
     thisrules[pos] = initialrate[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(initialrate) - 1):
@@ -1040,7 +1109,7 @@ while(i < 999999):
   elif(pos == 49):
     thisrules[pos] = dosteplimit[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
-    print >> g,str(thisrules)
+    print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(dosteplimit) - 1):

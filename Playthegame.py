@@ -17,7 +17,7 @@ scorelimit = range(5,21,1)
 redlimit = range(2,10,1)
 greenlimit = range(2,10,1)
 bluelimit = range(2,10,1)
-timelimit = range(50,200,1)
+timelimit = range(100,200,1)
 damagelimit = range(1,11,1)
 widthlimit = range(16,25,1)
 brithlimit = range(4,6,1)
@@ -89,10 +89,17 @@ class generatedMap(object):
     #connect
     for i in range(self.simulationtime):
         level_list = self.doSimulationStep(level_list)
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
+    zelda_level = zelda_level + '\n'
     for i in range(self.width * self.width):
+      if(i % self.width == 0):
+        zelda_level = zelda_level + 'x'
       zelda_level = zelda_level + level_list[i]
       if(i % self.width == self.width - 1):
-        zelda_level = zelda_level + '\n'
+        zelda_level = zelda_level + 'x\n'
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
     return zelda_level
 initPos = int(random.uniform(0,49))
 direction = int(random.uniform(0,1))
@@ -108,12 +115,12 @@ print template
 random.seed(time.time())
 for i in range(100):
   rules.append("")
-moveType = ['Immovable','CounterClockwiseSprite','ClockwiseSprite','RandomNPC','Chaser stype=link']
+moveType = ['Immovable','CounterClockwiseSprite','ClockwiseSprite','RandomNPC']
 interactionType = ['no','killSprite','killPartner','teleportPartner','teleportSprite','teleportBoth','killBoth']
 #linkType = ['NNSprite israndom=0','ShootNNSprite stype=sword israndom=0','ShootNNSprite stype=bullet israndom=0','ShootNNSprite stype=wall israndom=0']
 linkRule = {
     'link': '#agentType# stype=#stype# israndom=#israndom# ismove=#ismove#',
-    'agentType': ['ShootNNSprite'],
+    'agentType': ['NNAvatar'],
     'stype': ['sword','bullet'],
     'israndom': ['0'],
     'ismove':['1']
@@ -141,24 +148,27 @@ wwwwwwwwwwwwwwww
 zelda_game = """
 BasicGame
   SpriteSet  
-    sword > Flicker limit=5 singleton=True color=BLACK
+    sword > Flicker limit=0.05 singleton=True color=BLACK
     bullet > Bullet
       leftbullet > orientation=LEFT speed=0.5  color=YELLOW
       rightbullet > orientation=RIGHT speed=0.5  color=YELLOW
       upbullet > orientation=UP speed=0.5  color=YELLOW
       downbullet > orientation=DOWN speed=0.5  color=YELLOW
     movable >        
-      red  > {redmove} color=RED
-      green > {greenmove} color=GREEN
-      blue > {bluemove} color=BLUE
+      red  > {redmove} color=RED cooldown=2
+      green > {greenmove} color=GREEN cooldown=2
+      blue > {bluemove} color=BLUE cooldown=2
       link  > {linkmove} color=WHITE scooldown=5
+    boundary > Immovable color=BLACK
   LevelMapping
     R > red
     G > green
     B > blue
-    L > link            
+    L > link  
+    x > boundary          
   InteractionSet
     movable wall  > stepBack
+    movable boundary > stepBack
     red green > {redgreen} score=0 sdam={redgreensdam} pdam={redgreenpdam}
     red blue > {redblue} score=0 sdam={redbluesdam} pdam={redbluepdam}
     green blue > {greenblue} score=0 sdam={greenbluesdam} pdam={greenbluepdam}
@@ -168,9 +178,11 @@ BasicGame
     sword red > killBoth score={swordredScore} pdam={swordredpdam}
     sword blue > killBoth score={swordblueScore} pdam={swordbluepdam}
     sword green > killBoth score={swordgreenScore} pdam={swordgreenpdam}
+    sword wall > killBoth  
     bullet red > killBoth score={bulletredScore} pdam={bulletredpdam}
     bullet blue > killBoth score={bulletblueScore} pdam={bulletbluepdam}
-    bullet green > killBoth score={bulletgreenScore} pdam={bulletgreenpdam}         
+    bullet green > killBoth score={bulletgreenScore} pdam={bulletgreenpdam} 
+    bullet wall > killBoth      
   TerminationSet
     LinkDead score=-1 win=False
     Timeout limit={timelimit} win=True
@@ -231,8 +243,9 @@ def evaluate(fnn,iteration=5,isScreen=False):
         else:
           break
       zelda_this_level = ''.join(zelda_level_list)
-      #print zelda_this_level
-      game = VGDLParser.playGame(now_zelda_game, zelda_this_level, fnn = fnn , isScreen=False)
+      print now_zelda_game
+      os.system('read')
+      game = VGDLParser.playGame(now_zelda_game, zelda_this_level, fnn = fnn , isScreen=True)
       TotalScore += (game.score/float(scorelimit))
     return TotalScore/float(iteration)
 
@@ -271,10 +284,8 @@ def evaulateGame():
   from numpy import ndarray
 
   rules[3] = oldlink
-  print "oldlink........."+oldlink
   setRule(rules)
   best = 0
-  print "SNES starting......"
   algo = SNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
   #algo = GA(lambda x: evaluate(x), net, verbose=True)
   #algo = OriginalNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
@@ -568,19 +579,6 @@ while(i < 999999):
     thisrules[48]= random.choice(initialrate)
   if(int(random.uniform(1,27)) == 3): 
     thisrules[49]= int(random.choice(dosteplimit))
-  #related rules if no interaction get score the game will be weried
-  if(thisrules[4] == "no"):
-    thisrules[10] = '0'
-  if(thisrules[5] == "no"):
-    thisrules[11] = '0'
-  if(thisrules[6] == "no"):
-    thisrules[12] = '0'
-  if(thisrules[7] == "no"):
-    thisrules[13] = '0'
-  if(thisrules[8] == "no"):
-    thisrules[14] = '0'
-  if(thisrules[9] == "no"):
-    thisrules[15] = '0'
   setRule(thisrules)  
   eva,net = evaulateGame()
   if(eva > lastEva):
