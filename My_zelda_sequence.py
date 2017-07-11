@@ -11,15 +11,15 @@ import os
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.structure import *
 global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules,template,mapgenerator,nowlevel
-global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
+global scoremaxlimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
 #rulelimit
-scorelimit = range(5,21,1)
+scoremaxlimit = range(5,21,1)
 redlimit = range(2,10,1)
 greenlimit = range(2,10,1)
 bluelimit = range(2,10,1)
-timelimit = range(50,200,1)
-damagelimit = range(-5,11,1)
-widthlimit = range(16,25,1)
+timelimit = range(50,100,1)
+damagelimit = range(1,11,1)
+widthlimit = range(16,25,2)
 brithlimit = range(4,6,1)
 deadlimit = range(4,6,1)
 initialrate = range(3,6,1)
@@ -28,6 +28,10 @@ for rate in initialrate:
   initialrate[key] = float(rate)/10.
   key+=1
 dosteplimit = range(1,7,1)
+redcooldownlimit = range(1,6,1)
+greencooldownlimit = range(1,6,1)
+bluecooldownlimit = range(1,6,1)
+scooldownlimit = range(1,6,1)
 class generatedMap(object):
   width =64
   brithlimit = 4
@@ -157,10 +161,10 @@ BasicGame
       upbullet > orientation=UP speed=0.5  color=YELLOW
       downbullet > orientation=DOWN speed=0.5  color=YELLOW
     movable >        
-      red  > {redmove} color=RED cooldown=2
-      green > {greenmove} color=GREEN cooldown=2
-      blue > {bluemove} color=BLUE cooldown=2
-      link  > {linkmove} color=WHITE scooldown=5
+      red  > {redmove} color=RED cooldown={redcooldown}
+      green > {greenmove} color=GREEN cooldown={greencooldown}
+      blue > {bluemove} color=BLUE cooldown={bluecooldown} 
+      link  > {linkmove} color=WHITE scooldown={scooldown}
     boundary > Immovable color=BLACK
   LevelMapping
     R > red
@@ -190,7 +194,7 @@ BasicGame
     Timeout limit={timelimit} win=True
     Scoreout limit={scorelimit} win=True
 """
-def evaluate(fnn,iteration=5,isScreen=False):
+def evaluate(fnn,iteration=20,isScreen=False):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,mapgenerator,nowlevel
   if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -253,7 +257,7 @@ def evaluate(fnn,iteration=5,isScreen=False):
 def evaulateGame():
   global zelda_game,now_zelda_game,rules
   #buildNetWork
-  net = buildNetwork(108,10,8,hiddenclass=SigmoidLayer)
+  net = buildNetwork(336,10,8,hiddenclass=SigmoidLayer)
  
   #randomMove
   avg = 0
@@ -289,8 +293,8 @@ def evaulateGame():
   best = 0
   #SNES
   algo = SNES(lambda x: evaluate(x), net, verbose=True)
-  episodesPerStep = 2
-  for i in range(5):
+  episodesPerStep = 3
+  for i in range(3):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -454,6 +458,10 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{bulletgreenpdam}',thisrules[43])
   now_zelda_game = now_zelda_game.replace('{bulletbluepdam}',thisrules[44])
   mapgenerator = generatedMap(width=thisrules[45],brithlimit=thisrules[46],deadlimit=thisrules[47],density=thisrules[48],simulationtime=thisrules[49])
+  now_zelda_game = now_zelda_game.replace('{redcooldown}',thisrules[50])
+  now_zelda_game = now_zelda_game.replace('{greencooldown}',thisrules[51])
+  now_zelda_game = now_zelda_game.replace('{bluecooldown}',thisrules[52])
+  now_zelda_game = now_zelda_game.replace('{scooldown}',thisrules[53])
 def initial():
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules
   global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
@@ -533,6 +541,10 @@ def initial():
   rules[47]= random.choice(deadlimit)
   rules[48]= random.choice(initialrate)
   rules[49]= random.choice(dosteplimit)
+  rules[50]= str(random.choice(redcooldownlimit))
+  rules[51]= str(random.choice(greencooldownlimit))
+  rules[52]= str(random.choice(bluecooldownlimit))
+  rules[53]= str(random.choice(scooldownlimit))
   setRule(rules)
   #randomGame
   
@@ -1113,6 +1125,50 @@ while(i < 999999):
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(dosteplimit) - 1):
+      direction+=1
+    else:
+      direction=0
+      pos = 0
+  elif(pos == 50):
+    thisrules[pos] = redcooldownlimit[direction]
+    g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
+    print >> g,getGameByRule(thisrules)
+    print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
+    g.close()
+    if(direction < len(redcooldownlimit) - 1):
+      direction+=1
+    else:
+      direction=0
+      pos = 0
+  elif(pos == 51):
+    thisrules[pos] = greencooldownlimit[direction]
+    g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
+    print >> g,getGameByRule(thisrules)
+    print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
+    g.close()
+    if(direction < len(greencooldownlimit) - 1):
+      direction+=1
+    else:
+      direction=0
+      pos = 0
+  elif(pos == 52):
+    thisrules[pos] = bluecooldownlimit[direction]
+    g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
+    print >> g,getGameByRule(thisrules)
+    print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
+    g.close()
+    if(direction < len(bluecooldownlimit) - 1):
+      direction+=1
+    else:
+      direction=0
+      pos = 0
+  elif(pos == 53):
+    thisrules[pos] = scooldownlimit[direction]
+    g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
+    print >> g,getGameByRule(thisrules)
+    print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
+    g.close()
+    if(direction < len(scooldownlimit) - 1):
       direction+=1
     else:
       direction=0

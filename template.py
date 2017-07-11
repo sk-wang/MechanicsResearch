@@ -64,15 +64,22 @@ class generatedMap(object):
     #connect
     for i in range(self.simulationtime):
         level_list = self.doSimulationStep(level_list)
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
+    zelda_level = zelda_level + '\n'
     for i in range(self.width * self.width):
+      if(i % self.width == 0):
+        zelda_level = zelda_level + 'x'
       zelda_level = zelda_level + level_list[i]
       if(i % self.width == self.width - 1):
-        zelda_level = zelda_level + '\n'
+        zelda_level = zelda_level + 'x\n'
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
     return zelda_level
 red = {red}
 green = {green}
 blue = {blue}
-net = buildNetwork(108,10,8,hiddenclass=SigmoidLayer)
+net = buildNetwork(336,10,8,hiddenclass=SigmoidLayer)
 net._setParameters({net})
 mapgenerator = generatedMap(width={width},brithlimit={brith},deadlimit={dead},density={density},simulationtime={time})
 zelda_level = mapgenerator.generate()

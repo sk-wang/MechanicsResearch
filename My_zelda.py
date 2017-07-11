@@ -11,16 +11,16 @@ import os
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.structure import *
 global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules,template,mapgenerator,nowlevel
-global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
+global scoremaxlimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
 global redcooldownlimit,bluecooldownlimit,scooldownlimit
 #rulelimit
-scorelimit = range(5,21,1)
+scoremaxlimit = range(5,21,1)
 redlimit = range(2,10,1)
 greenlimit = range(2,10,1)
 bluelimit = range(2,10,1)
-timelimit = range(50,200,1)
-damagelimit = range(-5,11,1)
-widthlimit = range(16,25,1)
+timelimit = range(50,100,1)
+damagelimit = range(1,11,1)
+widthlimit = range(16,25,2)
 brithlimit = range(4,6,1)
 deadlimit = range(4,6,1)
 initialrate = range(3,6,1)
@@ -94,10 +94,17 @@ class generatedMap(object):
     #connect
     for i in range(self.simulationtime):
         level_list = self.doSimulationStep(level_list)
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
+    zelda_level = zelda_level + '\n'
     for i in range(self.width * self.width):
+      if(i % self.width == 0):
+        zelda_level = zelda_level + 'x'
       zelda_level = zelda_level + level_list[i]
       if(i % self.width == self.width - 1):
-        zelda_level = zelda_level + '\n'
+        zelda_level = zelda_level + 'x\n'
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
     return zelda_level
 initPos = int(random.uniform(0,49))
 direction = int(random.uniform(0,1))
@@ -157,31 +164,36 @@ BasicGame
       green > {greenmove} color=GREEN cooldown={greencooldown}
       blue > {bluemove} color=BLUE cooldown={bluecooldown} 
       link  > {linkmove} color=WHITE scooldown={scooldown}
+    boundary > Immovable color=BLACK
   LevelMapping
     R > red
     G > green
     B > blue
-    L > link            
+    L > link   
+    x > boundary          
   InteractionSet
     movable wall  > stepBack
+    movable boundary > stepBack
     red green > {redgreen} score=0 sdam={redgreensdam} pdam={redgreenpdam}
     red blue > {redblue} score=0 sdam={redbluesdam} pdam={redbluepdam}
     green blue > {greenblue} score=0 sdam={greenbluesdam} pdam={greenbluepdam}
     red link > {redlink} score={redlinkScore} sdam={redlinksdam} pdam={redlinkpdam}
     green link > {greenlink} score={greenlinkScore} sdam={greenlinksdam} pdam={greenlinkpdam}
     blue link > {bluelink} score={bluelinkScore} sdam={bluelinksdam} pdam={bluelinkpdam}
+    sword wall > killBoth
     sword red > killBoth score={swordredScore} pdam={swordredpdam}
     sword blue > killBoth score={swordblueScore} pdam={swordbluepdam}
     sword green > killBoth score={swordgreenScore} pdam={swordgreenpdam}
     bullet red > killBoth score={bulletredScore} pdam={bulletredpdam}
     bullet blue > killBoth score={bulletblueScore} pdam={bulletbluepdam}
-    bullet green > killBoth score={bulletgreenScore} pdam={bulletgreenpdam}         
+    bullet green > killBoth score={bulletgreenScore} pdam={bulletgreenpdam}
+    bullet wall > killBoth           
   TerminationSet
     LinkDead score=-1 win=False
     Timeout limit={timelimit} win=True
     Scoreout limit={scorelimit} win=True
 """
-def evaluate(fnn,iteration=5,isScreen=False):
+def evaluate(fnn,iteration=20,isScreen=False):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,mapgenerator,nowlevel
   if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -244,7 +256,7 @@ def evaluate(fnn,iteration=5,isScreen=False):
 def evaulateGame():
   global zelda_game,now_zelda_game,rules
   #buildNetWork
-  net = buildNetwork(108,10,8,hiddenclass=SigmoidLayer)
+  net = buildNetwork(336,10,8,hiddenclass=SigmoidLayer)
  
   #randomMove
   avg = 0
@@ -283,8 +295,8 @@ def evaulateGame():
   algo = SNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
   #algo = GA(lambda x: evaluate(x), net, verbose=True)
   #algo = OriginalNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
-  episodesPerStep = 2
-  for i in range(5):
+  episodesPerStep = 3
+  for i in range(3):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -363,7 +375,7 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{scooldown}',thisrules[53])
 def initial():
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules
-  global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
+  global scoremaxlimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
   #initial
   rules[0] = random.choice(moveType)
   rules[1] = random.choice(moveType)
@@ -406,7 +418,7 @@ def initial():
   rules[20] = str(random.choice(score))
   rules[21] = str(random.choice(score))
   #score limit from paper
-  rules[22] = random.choice(scorelimit)
+  rules[22] = random.choice(scoremaxlimit)
   #red green blue from my own experience
   rules[23] = random.choice(redlimit)
   rules[24] = random.choice(greenlimit)
@@ -524,7 +536,7 @@ while(i < 999999):
     thisrules[21] = str(random.choice(score))
   #limit
   if(int(random.uniform(1,27)) == 3):
-    thisrules[22] = int(random.choice(scorelimit))
+    thisrules[22] = int(random.choice(scoremaxlimit))
   if(int(random.uniform(1,27)) == 3):  
     thisrules[23] = int(random.choice(redlimit))
   if(int(random.uniform(1,27)) == 3):  
