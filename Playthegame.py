@@ -12,13 +12,14 @@ from pybrain.tools.shortcuts import buildNetwork
 from pybrain.structure import *
 global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules,template,mapgenerator,nowlevel
 global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
+global redcooldownlimit,bluecooldownlimit,scooldownlimit
 #rulelimit
 scorelimit = range(5,21,1)
 redlimit = range(2,10,1)
 greenlimit = range(2,10,1)
 bluelimit = range(2,10,1)
 timelimit = range(100,200,1)
-damagelimit = range(1,11,1)
+damagelimit = range(-5,11,1)
 widthlimit = range(16,25,1)
 brithlimit = range(4,6,1)
 deadlimit = range(4,6,1)
@@ -28,6 +29,10 @@ for rate in initialrate:
   initialrate[key] = float(rate)/10.
   key+=1
 dosteplimit = range(1,7,1)
+redcooldownlimit = range(1,5,1)
+greencooldownlimit = range(1,5,1)
+bluecooldownlimit = range(1,5,1)
+scooldownlimit = range(1,5,1)
 class generatedMap(object):
   width =64
   brithlimit = 4

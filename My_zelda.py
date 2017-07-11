@@ -12,13 +12,14 @@ from pybrain.tools.shortcuts import buildNetwork
 from pybrain.structure import *
 global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules,template,mapgenerator,nowlevel
 global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
+global redcooldownlimit,bluecooldownlimit,scooldownlimit
 #rulelimit
 scorelimit = range(5,21,1)
 redlimit = range(2,10,1)
 greenlimit = range(2,10,1)
 bluelimit = range(2,10,1)
 timelimit = range(50,200,1)
-damagelimit = range(1,11,1)
+damagelimit = range(-5,11,1)
 widthlimit = range(16,25,1)
 brithlimit = range(4,6,1)
 deadlimit = range(4,6,1)
@@ -28,6 +29,10 @@ for rate in initialrate:
   initialrate[key] = float(rate)/10.
   key+=1
 dosteplimit = range(1,7,1)
+redcooldownlimit = range(1,6,1)
+greencooldownlimit = range(1,6,1)
+bluecooldownlimit = range(1,6,1)
+scooldownlimit = range(1,6,1)
 class generatedMap(object):
   width =64
   brithlimit = 4
@@ -148,10 +153,10 @@ BasicGame
       upbullet > orientation=UP speed=0.5  color=YELLOW
       downbullet > orientation=DOWN speed=0.5  color=YELLOW
     movable >        
-      red  > {redmove} color=RED
-      green > {greenmove} color=GREEN
-      blue > {bluemove} color=BLUE
-      link  > {linkmove} color=WHITE scooldown=5
+      red  > {redmove} color=RED cooldown={redcooldown}
+      green > {greenmove} color=GREEN cooldown={greencooldown}
+      blue > {bluemove} color=BLUE cooldown={bluecooldown} 
+      link  > {linkmove} color=WHITE scooldown={scooldown}
   LevelMapping
     R > red
     G > green
@@ -352,6 +357,10 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{bulletgreenpdam}',thisrules[43])
   now_zelda_game = now_zelda_game.replace('{bulletbluepdam}',thisrules[44])
   mapgenerator = generatedMap(width=thisrules[45],brithlimit=thisrules[46],deadlimit=thisrules[47],density=thisrules[48],simulationtime=thisrules[49])
+  now_zelda_game = now_zelda_game.replace('{redcooldown}',thisrules[50])
+  now_zelda_game = now_zelda_game.replace('{greencooldown}',thisrules[51])
+  now_zelda_game = now_zelda_game.replace('{bluecooldown}',thisrules[52])
+  now_zelda_game = now_zelda_game.replace('{scooldown}',thisrules[53])
 def initial():
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules
   global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
@@ -431,6 +440,10 @@ def initial():
   rules[47]= random.choice(deadlimit)
   rules[48]= random.choice(initialrate)
   rules[49]= random.choice(dosteplimit)
+  rules[50]= str(random.choice(redcooldownlimit))
+  rules[51]= str(random.choice(greencooldownlimit))
+  rules[52]= str(random.choice(bluecooldownlimit))
+  rules[53]= str(random.choice(scooldownlimit))
   setRule(rules)
   #randomGame
   
@@ -568,6 +581,14 @@ while(i < 999999):
     thisrules[48]= random.choice(initialrate)
   if(int(random.uniform(1,27)) == 3): 
     thisrules[49]= int(random.choice(dosteplimit))
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[50]= str(int(random.choice(redcooldownlimit)))
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[51]= str(random.choice(greencooldownlimit))
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[52]= str(int(random.choice(bluecooldownlimit)))
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[53]= str(int(random.choice(scooldownlimit)))
   #related rules if no interaction get score the game will be weried
   if(thisrules[4] == "no"):
     thisrules[10] = '0'
