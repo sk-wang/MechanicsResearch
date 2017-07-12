@@ -126,7 +126,7 @@ interactionType = ['no','killSprite','killPartner','teleportPartner','teleportSp
 linkRule = {
     'link': '#agentType# stype=#stype# israndom=#israndom# ismove=#ismove#',
     'agentType': ['NNAvatar'],
-    'stype': ['sword','bullet'],
+    'stype': ['bullet'],
     'israndom': ['0'],
     'ismove':['1']
 }
@@ -160,10 +160,10 @@ BasicGame
       upbullet > orientation=UP speed=0.5  color=YELLOW
       downbullet > orientation=DOWN speed=0.5  color=YELLOW
     movable >        
-      red  > {redmove} color=RED cooldown=2
-      green > {greenmove} color=GREEN cooldown=2
-      blue > {bluemove} color=BLUE cooldown=2
-      link  > {linkmove} color=WHITE scooldown=5
+      red  > {redmove} color=RED cooldown={redcooldown}
+      green > {greenmove} color=GREEN cooldown={greencooldown}
+      blue > {bluemove} color=BLUE cooldown={bluecooldown}
+      link  > {linkmove} color=WHITE scooldown={scooldown}
     boundary > Immovable color=BLACK
   LevelMapping
     R > red
@@ -174,19 +174,19 @@ BasicGame
   InteractionSet
     movable wall  > stepBack
     movable boundary > stepBack
-    red green > {redgreen} score=0 sdam={redgreensdam} pdam={redgreenpdam}
-    red blue > {redblue} score=0 sdam={redbluesdam} pdam={redbluepdam}
-    green blue > {greenblue} score=0 sdam={greenbluesdam} pdam={greenbluepdam}
-    red link > {redlink} score={redlinkScore} sdam={redlinksdam} pdam={redlinkpdam}
-    green link > {greenlink} score={greenlinkScore} sdam={greenlinksdam} pdam={greenlinkpdam}
-    blue link > {bluelink} score={bluelinkScore} sdam={bluelinksdam} pdam={bluelinkpdam}
-    sword red > killBoth score={swordredScore} pdam={swordredpdam}
-    sword blue > killBoth score={swordblueScore} pdam={swordbluepdam}
-    sword green > killBoth score={swordgreenScore} pdam={swordgreenpdam}
+    red green > {redgreen} score=0
+    red blue > {redblue} score=0
+    green blue > {greenblue} score=0
+    red link > {redlink} score={redlinkScore}
+    green link > {greenlink} score={greenlinkScore}
+    blue link > {bluelink} score={bluelinkScore}
+    sword red > killBoth score={swordredScore}
+    sword blue > killBoth score={swordblueScore}
+    sword green > killBoth score={swordgreenScore}
     sword wall > killBoth  
-    bullet red > killBoth score={bulletredScore} pdam={bulletredpdam}
-    bullet blue > killBoth score={bulletblueScore} pdam={bulletbluepdam}
-    bullet green > killBoth score={bulletgreenScore} pdam={bulletgreenpdam} 
+    bullet red > killBoth score={bulletredScore}
+    bullet blue > killBoth score={bulletblueScore} 
+    bullet green > killBoth score={bulletgreenScore}
     bullet wall > killBoth      
   TerminationSet
     LinkDead score=-1 win=False
@@ -368,6 +368,10 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{bulletgreenpdam}',thisrules[43])
   now_zelda_game = now_zelda_game.replace('{bulletbluepdam}',thisrules[44])
   mapgenerator = generatedMap(width=thisrules[45],brithlimit=thisrules[46],deadlimit=thisrules[47],density=thisrules[48],simulationtime=thisrules[49])
+  now_zelda_game = now_zelda_game.replace('{redcooldown}',thisrules[50])
+  now_zelda_game = now_zelda_game.replace('{greencooldown}',thisrules[51])
+  now_zelda_game = now_zelda_game.replace('{bluecooldown}',thisrules[52])
+  now_zelda_game = now_zelda_game.replace('{scooldown}',thisrules[53])
 def initial():
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules
   global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
@@ -447,6 +451,10 @@ def initial():
   rules[47]= random.choice(deadlimit)
   rules[48]= random.choice(initialrate)
   rules[49]= random.choice(dosteplimit)
+  rules[50]= str(random.choice(redcooldownlimit))
+  rules[51]= str(random.choice(greencooldownlimit))
+  rules[52]= str(random.choice(bluecooldownlimit))
+  rules[53]= str(random.choice(scooldownlimit))
   setRule(rules)
   #randomGame
   
@@ -584,6 +592,14 @@ while(i < 999999):
     thisrules[48]= random.choice(initialrate)
   if(int(random.uniform(1,27)) == 3): 
     thisrules[49]= int(random.choice(dosteplimit))
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[50]= str(int(random.choice(redcooldownlimit)))
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[51]= str(random.choice(greencooldownlimit))
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[52]= str(int(random.choice(bluecooldownlimit)))
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[53]= str(int(random.choice(scooldownlimit)))
   setRule(thisrules)  
   eva,net = evaulateGame()
   if(eva > lastEva):

@@ -61,11 +61,18 @@ class generatedMap(object):
 				level_list.append(' ')
 		#connect
 		for i in range(self.simulationtime):
-		    level_list = self.doSimulationStep(level_list)
-		for i in range(self.width * self.width):
-			zelda_level = zelda_level + level_list[i]
-			if(i % self.width == self.width - 1):
-				zelda_level = zelda_level + '\n'
+        	level_list = self.doSimulationStep(level_list)
+	    for i in range(self.width+2):
+	      zelda_level = zelda_level + 'x'
+	    zelda_level = zelda_level + '\n'
+	    for i in range(self.width * self.width):
+	      if(i % self.width == 0):
+	        zelda_level = zelda_level + 'x'
+	      zelda_level = zelda_level + level_list[i]
+	      if(i % self.width == self.width - 1):
+	        zelda_level = zelda_level + 'x\n'
+	    for i in range(self.width+2):
+	      zelda_level = zelda_level + 'x'
 		return zelda_level
 #setlink
 #zelda

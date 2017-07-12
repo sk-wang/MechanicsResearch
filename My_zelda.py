@@ -126,7 +126,7 @@ interactionType = ['no','killSprite','killPartner','teleportPartner','teleportSp
 linkRule = {
     'link': '#agentType# stype=#stype# israndom=#israndom# ismove=#ismove#',
     'agentType': ['ShootNNSprite'],
-    'stype': ['sword','bullet'],
+    'stype': ['bullet'],
     'israndom': ['0'],
     'ismove':['1']
 }
@@ -174,19 +174,19 @@ BasicGame
   InteractionSet
     movable wall  > stepBack
     movable boundary > stepBack
-    red green > {redgreen} score=0 sdam={redgreensdam} pdam={redgreenpdam}
-    red blue > {redblue} score=0 sdam={redbluesdam} pdam={redbluepdam}
-    green blue > {greenblue} score=0 sdam={greenbluesdam} pdam={greenbluepdam}
-    red link > {redlink} score={redlinkScore} sdam={redlinksdam} pdam={redlinkpdam}
-    green link > {greenlink} score={greenlinkScore} sdam={greenlinksdam} pdam={greenlinkpdam}
-    blue link > {bluelink} score={bluelinkScore} sdam={bluelinksdam} pdam={bluelinkpdam}
+    red green > {redgreen} score=0 
+    red blue > {redblue} score=0 
+    green blue > {greenblue} score=0
+    red link > {redlink} score={redlinkScore}
+    green link > {greenlink} score={greenlinkScore}
+    blue link > {bluelink} score={bluelinkScore}
     sword wall > killBoth
-    sword red > killBoth score={swordredScore} pdam={swordredpdam}
-    sword blue > killBoth score={swordblueScore} pdam={swordbluepdam}
-    sword green > killBoth score={swordgreenScore} pdam={swordgreenpdam}
-    bullet red > killBoth score={bulletredScore} pdam={bulletredpdam}
-    bullet blue > killBoth score={bulletblueScore} pdam={bulletbluepdam}
-    bullet green > killBoth score={bulletgreenScore} pdam={bulletgreenpdam}
+    sword red > killBoth score={swordredScore}
+    sword blue > killBoth score={swordblueScore}
+    sword green > killBoth score={swordgreenScore}
+    bullet red > killBoth score={bulletredScore}
+    bullet blue > killBoth score={bulletblueScore}
+    bullet green > killBoth score={bulletgreenScore}
     bullet wall > killBoth           
   TerminationSet
     LinkDead score=-1 win=False
@@ -265,7 +265,7 @@ def evaulateGame():
   print rules[3]
   setRule(rules)
   print "randomPlay"
-  for i in range(10):
+  for i in range(50):
     avg += evaluate(net)
   """
   rules[3] = 'ShootNNSprite stype=sword israndom=1'
@@ -279,7 +279,7 @@ def evaulateGame():
   for i in range(20):
     avg += evaluate(net)
   """
-  if(avg / 10.0 > 0.3):
+  if(avg / 50.0 > 0.3):
     return -1,net
 
   from pybrain.optimization import SNES
@@ -291,12 +291,12 @@ def evaulateGame():
   print "oldlink........."+oldlink
   setRule(rules)
   best = 0
-  print "SNES starting......"
-  algo = SNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
-  #algo = GA(lambda x: evaluate(x), net, verbose=True)
+  print "GA starting......"
+  #algo = SNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
+  algo = GA(lambda x: evaluate(x), net, verbose=True)
   #algo = OriginalNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
-  episodesPerStep = 3
-  for i in range(3):
+  episodesPerStep = 10
+  for i in range(10):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -350,6 +350,7 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{timelimit}',thisrules[26])
   now_zelda_game = now_zelda_game.replace('{scorelimit}',str(scorelimit))
   #damage
+  """
   now_zelda_game = now_zelda_game.replace('{redgreensdam}',thisrules[27])
   now_zelda_game = now_zelda_game.replace('{redgreenpdam}',thisrules[28])
   now_zelda_game = now_zelda_game.replace('{redbluesdam}',thisrules[29])
@@ -368,6 +369,7 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{bulletredpdam}',thisrules[42])
   now_zelda_game = now_zelda_game.replace('{bulletgreenpdam}',thisrules[43])
   now_zelda_game = now_zelda_game.replace('{bulletbluepdam}',thisrules[44])
+  """
   mapgenerator = generatedMap(width=thisrules[45],brithlimit=thisrules[46],deadlimit=thisrules[47],density=thisrules[48],simulationtime=thisrules[49])
   now_zelda_game = now_zelda_game.replace('{redcooldown}',thisrules[50])
   now_zelda_game = now_zelda_game.replace('{greencooldown}',thisrules[51])
@@ -426,6 +428,7 @@ def initial():
   #timelimit accoring to my own experience
   rules[26] = str(random.choice(timelimit))
 
+  """
   #damage from my own experience
   rules[27]= str(random.choice(damagelimit))
   rules[28]= str(random.choice(damagelimit))
@@ -445,7 +448,8 @@ def initial():
   rules[42]= str(random.choice(damagelimit))
   rules[43]= str(random.choice(damagelimit))
   rules[44]= str(random.choice(damagelimit))
-
+  """
+  
   #level from page https://gamedevelopment.tutsplus.com/tutorials/generate-random-cave-levels-using-cellular-automata--gamedev-9664
   rules[45]= random.choice(widthlimit)
   rules[46]= random.choice(brithlimit)
@@ -545,6 +549,7 @@ while(i < 999999):
     thisrules[25] = int(random.choice(bluelimit))
   if(int(random.uniform(1,27)) == 3):  
     thisrules[26] = str(random.choice(timelimit))
+  """
   #damage
   if(int(random.uniform(1,27)) == 3): 
     thisrules[27]= str(random.choice(damagelimit))
@@ -582,6 +587,7 @@ while(i < 999999):
     thisrules[43]= str(random.choice(damagelimit))
   if(int(random.uniform(1,27)) == 3): 
     thisrules[44]= str(random.choice(damagelimit))
+  """
   #level
   if(int(random.uniform(1,27)) == 3): 
     thisrules[45]= int(random.choice(widthlimit))
