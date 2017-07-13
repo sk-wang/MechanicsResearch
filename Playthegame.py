@@ -123,6 +123,7 @@ for i in range(100):
 moveType = ['Immovable','CounterClockwiseSprite','ClockwiseSprite','RandomNPC']
 interactionType = ['no','killSprite','killPartner','teleportPartner','teleportSprite','teleportBoth','killBoth']
 #linkType = ['NNSprite israndom=0','ShootNNSprite stype=sword israndom=0','ShootNNSprite stype=bullet israndom=0','ShootNNSprite stype=wall israndom=0']
+bulletlimit = ['killBoth','killSprite']
 linkRule = {
     'link': '#agentType# stype=#stype# israndom=#israndom# ismove=#ismove#',
     'agentType': ['NNAvatar'],

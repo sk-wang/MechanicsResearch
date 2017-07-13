@@ -123,6 +123,7 @@ for i in range(100):
 moveType = ['Immovable','CounterClockwiseSprite','ClockwiseSprite','RandomNPC','Chaser stype=link']
 interactionType = ['no','killSprite','killPartner','teleportPartner','teleportSprite','teleportBoth','killBoth']
 #linkType = ['NNSprite israndom=0','ShootNNSprite stype=sword israndom=0','ShootNNSprite stype=bullet israndom=0','ShootNNSprite stype=wall israndom=0']
+bulletlimit = ['killBoth','killSprite']
 linkRule = {
     'link': '#agentType# stype=#stype# israndom=#israndom# ismove=#ismove#',
     'agentType': ['ShootNNSprite'],
@@ -184,9 +185,9 @@ BasicGame
     sword red > killBoth score={swordredScore}
     sword blue > killBoth score={swordblueScore}
     sword green > killBoth score={swordgreenScore}
-    bullet red > killBoth score={bulletredScore}
-    bullet blue > killBoth score={bulletblueScore}
-    bullet green > killBoth score={bulletgreenScore}
+    bullet red > {bulletred} score={bulletredScore}
+    bullet blue > {bulletblue} score={bulletblueScore}
+    bullet green > {bulletgreen} score={bulletgreenScore}
     bullet wall > killBoth           
   TerminationSet
     LinkDead score=-1 win=False
@@ -265,7 +266,7 @@ def evaulateGame():
   print rules[3]
   setRule(rules)
   print "randomPlay"
-  for i in range(20):
+  for i in range(10):
     avg += evaluate(net)
   """
   rules[3] = 'ShootNNSprite stype=sword israndom=1'
@@ -279,7 +280,7 @@ def evaulateGame():
   for i in range(20):
     avg += evaluate(net)
   """
-  if(avg / 20.0 > 0.4):
+  if(avg / 10.0 > 0.4):
     return -1,net
 
   from pybrain.optimization import SNES
@@ -295,8 +296,8 @@ def evaulateGame():
   #algo = SNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
   algo = GA(lambda x: evaluate(x), net, verbose=True)
   #algo = OriginalNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
-  episodesPerStep = 10
-  for i in range(10):
+  episodesPerStep = 5
+  for i in range(5):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -375,6 +376,10 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{greencooldown}',thisrules[51])
   now_zelda_game = now_zelda_game.replace('{bluecooldown}',thisrules[52])
   now_zelda_game = now_zelda_game.replace('{scooldown}',thisrules[53])
+  now_zelda_game = now_zelda_game.replace('{bulletred}',thisrules[54])
+  now_zelda_game = now_zelda_game.replace('{bulletblue}',thisrules[55])
+  now_zelda_game = now_zelda_game.replace('{bulletgreen}',thisrules[56])
+
 def initial():
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules
   global scoremaxlimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
@@ -460,6 +465,9 @@ def initial():
   rules[51]= str(random.choice(greencooldownlimit))
   rules[52]= str(random.choice(bluecooldownlimit))
   rules[53]= str(random.choice(scooldownlimit))
+  rules[54]= random.choice(bulletlimit)
+  rules[55]= random.choice(bulletlimit)
+  rules[56]= random.choice(bulletlimit)
   setRule(rules)
   #randomGame
   
@@ -607,6 +615,12 @@ while(i < 999999):
     thisrules[52]= str(int(random.choice(bluecooldownlimit)))
   if(int(random.uniform(1,27)) == 3): 
     thisrules[53]= str(int(random.choice(scooldownlimit)))
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[54]= random.choice(bulletlimit)
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[55]= random.choice(bulletlimit)
+  if(int(random.uniform(1,27)) == 3): 
+    thisrules[56]= random.choice(bulletlimit)
   #related rules if no interaction get score the game will be weried
   if(thisrules[4] == "no"):
     thisrules[10] = '0'
