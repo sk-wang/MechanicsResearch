@@ -265,7 +265,7 @@ def evaulateGame():
   print rules[3]
   setRule(rules)
   print "randomPlay"
-  for i in range(50):
+  for i in range(20):
     avg += evaluate(net)
   """
   rules[3] = 'ShootNNSprite stype=sword israndom=1'
@@ -279,7 +279,7 @@ def evaulateGame():
   for i in range(20):
     avg += evaluate(net)
   """
-  if(avg / 50.0 > 0.3):
+  if(avg / 20.0 > 0.4):
     return -1,net
 
   from pybrain.optimization import SNES

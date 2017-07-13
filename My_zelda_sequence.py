@@ -8,6 +8,7 @@ import random
 import time
 import tracery
 import os
+import copy
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.structure import *
 global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules,template,mapgenerator,nowlevel
@@ -194,7 +195,7 @@ BasicGame
     Timeout limit={timelimit} win=True
     Scoreout limit={scorelimit} win=True
 """
-def evaluate(fnn,iteration=30,isScreen=False):
+def evaluate(fnn,iteration=20,isScreen=False):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,mapgenerator,nowlevel
   if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -266,7 +267,7 @@ def evaulateGame():
   print rules[3]
   setRule(rules)
   print "randomPlay"
-  for i in range(20):
+  for i in range(10):
     avg += evaluate(net)
   """
   rules[3] = 'ShootNNSprite stype=sword israndom=1'
@@ -280,7 +281,7 @@ def evaulateGame():
   for i in range(20):
     avg += evaluate(net)
   """
-  if(avg / 20.0 > 0.4):
+  if(avg / 10.0 > 0.4):
     return -1,net
 
   from pybrain.optimization import SNES
@@ -294,7 +295,7 @@ def evaulateGame():
   #SNES
   algo = SNES(lambda x: evaluate(x), net, verbose=True)
   episodesPerStep = 5
-  for i in range(5):
+  for i in range(2):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -315,7 +316,7 @@ def evaulateGame():
   net = buildNetwork(336,10,8,hiddenclass=SigmoidLayer)
   algo = GA(lambda x: evaluate(x), net, verbose=True)
   episodesPerStep = 5
-  for i in range(5):
+  for i in range(2):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -640,7 +641,7 @@ print >> f,nowgame
 print "written"
 """
 lastEva = eva
-lastrules = rules
+lastrules = copy.copy(rules)
 nogame = 0
 i = 0
 while(i < 999999):
@@ -886,7 +887,7 @@ while(i < 999999):
       direction+=1
     else:
       direction=0
-      pos+=1
+      pos=4
   elif(pos == 4):
     thisrules[pos] = interactionType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
