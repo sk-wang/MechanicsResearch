@@ -381,8 +381,8 @@ def getGameByRule(thisrules):
   red = thisrules[23]
   blue = thisrules[24]
   green = thisrules[25]
-  this_zelda_game = now_zelda_game.replace('{timelimit}',thisrules[26])
-  this_zelda_game = now_zelda_game.replace('{scorelimit}',str(scorelimit))
+  this_zelda_game = this_zelda_game.replace('{timelimit}',thisrules[26])
+  this_zelda_game = this_zelda_game.replace('{scorelimit}',str(scorelimit))
   """
   #damage
   this_zelda_game = now_zelda_game.replace('{redgreensdam}',thisrules[27])
