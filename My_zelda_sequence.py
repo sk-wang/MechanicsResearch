@@ -646,7 +646,7 @@ nogame = 0
 i = 0
 while(i < 999999):
   i = i + 1
-  thisrules = lastrules
+  thisrules = copy.copy(lastrules)
   #mutate
   #print >> f,'Generation'+str(i)+':'
   """
