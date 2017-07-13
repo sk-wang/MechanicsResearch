@@ -125,6 +125,7 @@ for i in range(100):
 moveType = ['Immovable','CounterClockwiseSprite','ClockwiseSprite','RandomNPC','Chaser stype=link']
 interactionType = ['no','killSprite','killPartner','teleportPartner','teleportSprite','teleportBoth','killBoth']
 #linkType = ['NNSprite israndom=0','ShootNNSprite stype=sword israndom=0','ShootNNSprite stype=bullet israndom=0','ShootNNSprite stype=wall israndom=0']
+bulletlimit = ['killBoth','killSprite']
 linkRule = {
     'link': '#agentType# stype=#stype# israndom=#israndom# ismove=#ismove#',
     'agentType': ['ShootNNSprite'],
@@ -187,9 +188,9 @@ BasicGame
     sword blue > killBoth score={swordblueScore}
     sword green > killBoth score={swordgreenScore}
     sword wall > killBoth  
-    bullet red > killBoth score={bulletredScore}
-    bullet blue > killBoth score={bulletblueScore}
-    bullet green > killBoth score={bulletgreenScore}
+    bullet red > {bulletred} score={bulletredScore}
+    bullet blue > {bulletblue} score={bulletblueScore}
+    bullet green > {bulletgreen} score={bulletgreenScore}
     bullet wall > killBoth      
   TerminationSet
     LinkDead score=-1 win=False
@@ -468,6 +469,9 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{greencooldown}',thisrules[51])
   now_zelda_game = now_zelda_game.replace('{bluecooldown}',thisrules[52])
   now_zelda_game = now_zelda_game.replace('{scooldown}',thisrules[53])
+  now_zelda_game = now_zelda_game.replace('{bulletred}',thisrules[54])
+  now_zelda_game = now_zelda_game.replace('{bulletblue}',thisrules[55])
+  now_zelda_game = now_zelda_game.replace('{bulletgreen}',thisrules[56])
 def initial():
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules
   global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
@@ -552,12 +556,15 @@ def initial():
   rules[51]= str(random.choice(greencooldownlimit))
   rules[52]= str(random.choice(bluecooldownlimit))
   rules[53]= str(random.choice(scooldownlimit))
+  rules[54]= random.choice(bulletlimit)
+  rules[55]= random.choice(bulletlimit)
+  rules[56]= random.choice(bulletlimit)
   setRule(rules)
   #randomGame
 
 def certainInitial():
   global rules
-  rules[0] = "Chaser"
+  rules[0] = "Chaser stype=link"
   rules[1] = "CounterClockwiseSprite"
   rules[2] = "ClockwiseSprite"
   rules[3] = "ShootNNSprite stype=bullet israndom=0 ismove=1"
@@ -570,23 +577,23 @@ def certainInitial():
   rules[10] = '0'
   rules[11] = '0'
   rules[12] = '0'
-  rules[13] = '0'
+  rules[13] = '-1'
   rules[14] = '0'
-  rules[15] = '-1'
+  rules[15] = '0'
   rules[16] = '0'
   rules[17] = '-1'
   rules[18] = '-1'
-  rules[19] = '0'
+  rules[19] = '1'
   rules[20] = '0'
-  rules[21] = '1'
+  rules[21] = '0'
   #score limit from paper
-  rules[22] = '18'
+  rules[22] = '5'
   #red green blue from my own experience
-  rules[23] = 2
-  rules[24] = 2
-  rules[25] = 2
+  rules[23] = 5
+  rules[24] = 5
+  rules[25] = 5
   #timelimit accoring to my own experience
-  rules[26] = '53'
+  rules[26] = '100'
 
   #damage from my own experience
   rules[27]= 6
@@ -616,6 +623,9 @@ def certainInitial():
   rules[51]= '3'
   rules[52]= '5'
   rules[53]= '2'
+  rules[54]= 'killSprite'
+  rules[55]= 'killSprite'
+  rules[56]= 'killBoth'
   setRule(rules)
   #certainGame  
 #start
@@ -1207,6 +1217,39 @@ while(i < 999999):
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(scooldownlimit) - 1):
+      direction+=1
+    else:
+      direction=0
+      pos += 1
+  elif(pos == 54):
+    thisrules[pos] = bulletlimit[direction]
+    g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
+    #print >> g,getGameByRule(thisrules)
+    print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
+    g.close()
+    if(direction < len(bulletlimit) - 1):
+      direction+=1
+    else:
+      direction=0
+      pos += 1
+  elif(pos == 55):
+    thisrules[pos] = bulletlimit[direction]
+    g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
+    #print >> g,getGameByRule(thisrules)
+    print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
+    g.close()
+    if(direction < len(bulletlimit) - 1):
+      direction+=1
+    else:
+      direction=0
+      pos += 1
+  elif(pos == 56):
+    thisrules[pos] = bulletlimit[direction]
+    g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
+    #print >> g,getGameByRule(thisrules)
+    print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
+    g.close()
+    if(direction < len(bulletlimit) - 1):
       direction+=1
     else:
       direction=0

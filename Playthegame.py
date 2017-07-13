@@ -184,9 +184,9 @@ BasicGame
     sword blue > killBoth score={swordblueScore}
     sword green > killBoth score={swordgreenScore}
     sword wall > killBoth  
-    bullet red > killBoth score={bulletredScore}
-    bullet blue > killBoth score={bulletblueScore} 
-    bullet green > killBoth score={bulletgreenScore}
+    bullet red > {bulletred} score={bulletredScore}
+    bullet blue > {bulletblue} score={bulletblueScore} 
+    bullet green > {bulletgreen} score={bulletgreenScore}
     bullet wall > killBoth      
   TerminationSet
     LinkDead score=-1 win=False
@@ -349,6 +349,7 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{timelimit}',thisrules[26])
   now_zelda_game = now_zelda_game.replace('{scorelimit}',str(scorelimit))
   #damage
+  """
   now_zelda_game = now_zelda_game.replace('{redgreensdam}',thisrules[27])
   now_zelda_game = now_zelda_game.replace('{redgreenpdam}',thisrules[28])
   now_zelda_game = now_zelda_game.replace('{redbluesdam}',thisrules[29])
@@ -367,11 +368,81 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{bulletredpdam}',thisrules[42])
   now_zelda_game = now_zelda_game.replace('{bulletgreenpdam}',thisrules[43])
   now_zelda_game = now_zelda_game.replace('{bulletbluepdam}',thisrules[44])
+  """
   mapgenerator = generatedMap(width=thisrules[45],brithlimit=thisrules[46],deadlimit=thisrules[47],density=thisrules[48],simulationtime=thisrules[49])
   now_zelda_game = now_zelda_game.replace('{redcooldown}',thisrules[50])
   now_zelda_game = now_zelda_game.replace('{greencooldown}',thisrules[51])
   now_zelda_game = now_zelda_game.replace('{bluecooldown}',thisrules[52])
   now_zelda_game = now_zelda_game.replace('{scooldown}',thisrules[53])
+  now_zelda_game = now_zelda_game.replace('{bulletred}',thisrules[54])
+  now_zelda_game = now_zelda_game.replace('{bulletblue}',thisrules[55])
+  now_zelda_game = now_zelda_game.replace('{bulletgreen}',thisrules[56])
+def certainInitial():
+  global rules
+  rules[0] = "Chaser stype=link"
+  rules[1] = "CounterClockwiseSprite"
+  rules[2] = "ClockwiseSprite"
+  rules[3] = "NNAvatar stype=bullet israndom=0 ismove=1"
+  rules[4] = "teleportSprite"
+  rules[5] = "teleportSprite"
+  rules[6] = "teleportSprite"
+  rules[7] = "teleportPartner"
+  rules[8] = "teleportSprite"
+  rules[9] = "killPartner"
+  rules[10] = '0'
+  rules[11] = '0'
+  rules[12] = '0'
+  rules[13] = '-1'
+  rules[14] = '0'
+  rules[15] = '0'
+  rules[16] = '0'
+  rules[17] = '-1'
+  rules[18] = '-1'
+  rules[19] = '1'
+  rules[20] = '0'
+  rules[21] = '0'
+  #score limit from paper
+  rules[22] = '5'
+  #red green blue from my own experience
+  rules[23] = 5
+  rules[24] = 5
+  rules[25] = 5
+  #timelimit accoring to my own experience
+  rules[26] = '100'
+
+  #damage from my own experience
+  rules[27]= 6
+  rules[28]= 3
+  rules[29]= 2
+  rules[30]= 10
+  rules[31]= 7
+  rules[32]= 2
+  rules[33]= 1
+  rules[34]= 3
+  rules[35]= 7
+  rules[36]= 6
+  rules[37]= 1
+  rules[38]= 10
+  rules[39]= 7
+  rules[40]= 4
+  rules[41]= 4
+  rules[42]= 10
+  rules[43]= 1
+  rules[44]= 1
+  rules[45]= 20
+  rules[46]= 5
+  rules[47]= 5
+  rules[48]= 0.3
+  rules[49]= 6
+  rules[50]= '3'
+  rules[51]= '3'
+  rules[52]= '5'
+  rules[53]= '2'
+  rules[54]= 'killSprite'
+  rules[55]= 'killSprite'
+  rules[56]= 'killBoth'
+  setRule(rules)
+  #certainGame  
 def initial():
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules
   global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
@@ -426,6 +497,7 @@ def initial():
   rules[26] = str(random.choice(timelimit))
 
   #damage from my own experience
+  """
   rules[27]= str(random.choice(damagelimit))
   rules[28]= str(random.choice(damagelimit))
   rules[29]= str(random.choice(damagelimit))
@@ -444,6 +516,7 @@ def initial():
   rules[42]= str(random.choice(damagelimit))
   rules[43]= str(random.choice(damagelimit))
   rules[44]= str(random.choice(damagelimit))
+  """
 
   #level from page https://gamedevelopment.tutsplus.com/tutorials/generate-random-cave-levels-using-cellular-automata--gamedev-9664
   rules[45]= random.choice(widthlimit)
@@ -455,11 +528,14 @@ def initial():
   rules[51]= str(random.choice(greencooldownlimit))
   rules[52]= str(random.choice(bluecooldownlimit))
   rules[53]= str(random.choice(scooldownlimit))
+  rules[54]= random.choice(bulletlimit)
+  rules[55]= random.choice(bulletlimit)
+  rules[56]= random.choice(bulletlimit)
   setRule(rules)
   #randomGame
   
 #start
-initial()
+certainInitial()
 eva,net = evaulateGame()
 #f = open('/Users/skwang/Desktop/stats', 'a+')
 #print >> f,now_zelda_game,net,net.params,eva,red,blue,green
