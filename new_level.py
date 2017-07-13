@@ -41,10 +41,12 @@ class generatedMap(object):
                   else:
                       newMap[x + y * self.width] = " "
       return newMap
-  def generateWithConnectedness(self,connectedness):
+  def generateWithMetrics(self,connectedness = 0.8,openness = 0.8):
     level_list = []
     zelda_level = ""
+    tryCount = 0
     while True:
+      tryCount+=1
       #init level
       level_list = []
       zelda_level = ""
@@ -66,9 +68,13 @@ class generatedMap(object):
           level_list = self.doSimulationStep(level_list)
       #count the total ground
       groundCount = 0
+      emptytiles = []
+      pos = 0
       for grid in level_list:
         if(grid == " "):
+          emptytiles.append(pos)
           groundCount+=1
+        pos+=1
       #find the connected area
       connectedareas = []
       #start finding
@@ -94,9 +100,22 @@ class generatedMap(object):
       for connectedarea in connectedareas:
         if len(connectedarea) > maxLength:
           maxLength = len(connectedarea)
-      print maxLength,groundCount,connectedareas
-      if float(maxLength)/float(groundCount) >= connectedness:
+      #print maxLength,groundCount,connectedareas
+      #openness
+      opennessCount = 0
+      for empty in emptytiles:
+        if empty % self.width != 0 and empty - 1 not in connectedarea and level_list[empty - 1] != " ":
+          continue
+        if empty % self.width != self.width - 1 and empty + 1 not in connectedarea and level_list[empty + 1] != " ":
+          continue
+        if empty >= self.width and empty - self.width not in connectedarea and level_list[empty - self.width] != " ":
+          continue
+        if empty < self.width * (self.width - 1) and empty + self.width not in connectedarea and level_list[empty + self.width] != " ":
+          continue
+        opennessCount+=1
+      if float(opennessCount)/float(groundCount) >= openness and float(maxLength)/float(groundCount) >= connectedness:
         break
+    print tryCount
     for i in range(self.width+2):
       zelda_level = zelda_level + 'x'
     zelda_level = zelda_level + '\n'
@@ -183,7 +202,7 @@ BasicGame
 """
 if __name__ == "__main__":
   from vgdl.core import VGDLParser
-  zelda_level = mapgenerator.generateWithConnectedness(1)
+  zelda_level = mapgenerator.generateWithMetrics(connectedness = 0.8,openness = 0.75)
   zelda_level_list = list(zelda_level)
   for i in range(99999):
     if(zelda_level.find(' ')):

@@ -195,7 +195,7 @@ BasicGame
     Timeout limit={timelimit} win=True
     Scoreout limit={scorelimit} win=True
 """
-def evaluate(fnn,iteration=20,isScreen=False):
+def evaluate(fnn,iteration=1,isScreen=False):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,mapgenerator,nowlevel
   if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -267,7 +267,7 @@ def evaulateGame():
   print rules[3]
   setRule(rules)
   print "randomPlay"
-  for i in range(10):
+  for i in range(2):
     avg += evaluate(net)
   """
   rules[3] = 'ShootNNSprite stype=sword israndom=1'
@@ -281,7 +281,7 @@ def evaulateGame():
   for i in range(20):
     avg += evaluate(net)
   """
-  if(avg / 10.0 > 0.4):
+  if(avg / 2.0 > 1):
     return -1,net
 
   from pybrain.optimization import SNES
@@ -294,8 +294,8 @@ def evaulateGame():
   best = 0
   #SNES
   algo = SNES(lambda x: evaluate(x), net, verbose=True)
-  episodesPerStep = 5
-  for i in range(2):
+  episodesPerStep = 1
+  for i in range(1):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -315,8 +315,8 @@ def evaulateGame():
   #GA
   net = buildNetwork(336,10,8,hiddenclass=SigmoidLayer)
   algo = GA(lambda x: evaluate(x), net, verbose=True)
-  episodesPerStep = 5
-  for i in range(2):
+  episodesPerStep = 1
+  for i in range(1):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -346,11 +346,10 @@ def evaulateGame():
     if algo.bestEvaluation > best:
       best = algo.bestEvaluation
   """
-  print now_zelda_game
+  #print now_zelda_game
   return best,net
 def getGameByRule(thisrules):
   global zelda_game
-  #print thisrules
   this_zelda_game = zelda_game
   this_zelda_game = this_zelda_game.replace('{redmove}',thisrules[0])
   this_zelda_game = this_zelda_game.replace('{greenmove}',thisrules[1])
@@ -381,8 +380,8 @@ def getGameByRule(thisrules):
   red = thisrules[23]
   blue = thisrules[24]
   green = thisrules[25]
-  this_zelda_game = now_zelda_game.replace('{timelimit}',thisrules[26])
-  this_zelda_game = now_zelda_game.replace('{scorelimit}',str(scorelimit))
+  this_zelda_game = this_zelda_game.replace('{timelimit}',thisrules[26])
+  this_zelda_game = this_zelda_game.replace('{scorelimit}',str(scorelimit))
   """
   #damage
   this_zelda_game = now_zelda_game.replace('{redgreensdam}',thisrules[27])
@@ -404,6 +403,7 @@ def getGameByRule(thisrules):
   this_zelda_game = now_zelda_game.replace('{bulletgreenpdam}',thisrules[43])
   this_zelda_game = now_zelda_game.replace('{bulletbluepdam}',thisrules[44])
   """
+  print this_zelda_game
   return "red is" + str(red) + "\ngreen is " + str(green) + "\nblue is " + str(blue) + "\n" + this_zelda_game + "\nwidth is " + str(thisrules[45]) + "\nbirthlimit is " + str(thisrules[46]) + "\ndeadlimit is " + str(thisrules[47]) + "\ninitial rate is " + str(thisrules[48]) + "\ndoStep is " + str(thisrules[49])
 def setRule(thisrules):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules,mapgenerator
@@ -646,7 +646,7 @@ nogame = 0
 i = 0
 while(i < 999999):
   i = i + 1
-  thisrules = lastrules
+  thisrules = copy.copy(lastrules)
   #mutate
   #print >> f,'Generation'+str(i)+':'
   """
@@ -856,7 +856,7 @@ while(i < 999999):
   """
   #interaction
   if(pos == 0):
-    thisrules[pos] = copy.copy(moveType[direction])
+    thisrules[pos] = moveType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
     print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
@@ -867,7 +867,7 @@ while(i < 999999):
       direction=0
       pos+=1
   elif(pos == 1):  
-    thisrules[pos] = copy.copy(moveType[direction])
+    thisrules[pos] = moveType[direction]
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
     print >> g,getGameByRule(thisrules)
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
