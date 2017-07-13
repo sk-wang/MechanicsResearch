@@ -24,6 +24,7 @@ widthlimit = range(16,25,2)
 brithlimit = range(4,6,1)
 deadlimit = range(4,6,1)
 initialrate = range(3,6,1)
+initialPos = [0,1,2,3,4,5,6,7,8,9,13,14,15,16,17,18,19,20,21,22,23,24,25,26,45,46,47,48,49,50,51,52,53]
 key = 0
 for rate in initialrate:
   initialrate[key] = float(rate)/10.
@@ -106,7 +107,7 @@ class generatedMap(object):
     for i in range(self.width+2):
       zelda_level = zelda_level + 'x'
     return zelda_level
-pos = 0
+pos = random.choice(initialPos)
 threadnumber = int(random.uniform(0,99999999999))
 direction = 0
 nowlevel = ""
@@ -195,7 +196,7 @@ BasicGame
     Timeout limit={timelimit} win=True
     Scoreout limit={scorelimit} win=True
 """
-def evaluate(fnn,iteration=20,isScreen=False):
+def evaluate(fnn,iteration=1,isScreen=False):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,mapgenerator,nowlevel
   if __name__ == "__main__":
     from vgdl.core import VGDLParser
@@ -267,7 +268,7 @@ def evaulateGame():
   print rules[3]
   setRule(rules)
   print "randomPlay"
-  for i in range(10):
+  for i in range(1):
     avg += evaluate(net)
   """
   rules[3] = 'ShootNNSprite stype=sword israndom=1'
@@ -294,8 +295,8 @@ def evaulateGame():
   best = 0
   #SNES
   algo = SNES(lambda x: evaluate(x), net, verbose=True)
-  episodesPerStep = 5
-  for i in range(2):
+  episodesPerStep = 1
+  for i in range(1):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -315,8 +316,8 @@ def evaulateGame():
   #GA
   net = buildNetwork(336,10,8,hiddenclass=SigmoidLayer)
   algo = GA(lambda x: evaluate(x), net, verbose=True)
-  episodesPerStep = 5
-  for i in range(2):
+  episodesPerStep = 1
+  for i in range(1):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
