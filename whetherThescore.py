@@ -8,11 +8,11 @@ import random
 import time
 import tracery
 import os
+import copy
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.structure import *
 global zelda_level,zelda_game,red,blue,green,now_zelda_game,scorelimit,rules,template,mapgenerator,nowlevel
 global scoremaxlimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
-global redcooldownlimit,bluecooldownlimit,scooldownlimit
 #rulelimit
 scoremaxlimit = range(5,21,1)
 redlimit = range(2,10,1)
@@ -24,6 +24,7 @@ widthlimit = range(16,25,2)
 brithlimit = range(4,6,1)
 deadlimit = range(4,6,1)
 initialrate = range(3,6,1)
+initialPos = [0,1,2,3,4,5,6,7,8,9,13,14,15,16,17,18,19,20,21,22,23,24,25,26,45,46,47,48,49,50,51,52,53]
 key = 0
 for rate in initialrate:
   initialrate[key] = float(rate)/10.
@@ -218,8 +219,9 @@ class generatedMap(object):
     for i in range(self.width+2):
       zelda_level = zelda_level + 'x'
     return zelda_level
-initPos = int(random.uniform(0,49))
-direction = int(random.uniform(0,1))
+pos = random.choice(initialPos)
+threadnumber = int(random.uniform(0,99999999999))
+direction = 0
 nowlevel = ""
 red = 3
 green = 2
@@ -244,6 +246,7 @@ linkRule = {
     'ismove':['1']
 }
 grammar = tracery.Grammar(linkRule)
+#according to paper
 score = [-1,0,1]
 zelda_level = """
 wwwwwwwwwwwwwwww
@@ -266,7 +269,7 @@ wwwwwwwwwwwwwwww
 zelda_game = """
 BasicGame
   SpriteSet  
-    sword > Flicker limit=5 singleton=True color=BLACK
+    sword > Flicker limit=0.05 singleton=True color=BLACK
     bullet > Bullet
       leftbullet > orientation=LEFT speed=0.5  color=YELLOW
       rightbullet > orientation=RIGHT speed=0.5  color=YELLOW
@@ -282,32 +285,33 @@ BasicGame
     R > red
     G > green
     B > blue
-    L > link   
+    L > link  
     x > boundary          
   InteractionSet
     movable wall  > stepBack
     movable boundary > stepBack
-    red green > {redgreen} score=0 
+    red green > {redgreen} score=0
     red blue > {redblue} score=0 
     green blue > {greenblue} score=0
     red link > {redlink} score={redlinkScore}
     green link > {greenlink} score={greenlinkScore}
     blue link > {bluelink} score={bluelinkScore}
-    sword wall > killBoth
     sword red > killBoth score={swordredScore}
     sword blue > killBoth score={swordblueScore}
     sword green > killBoth score={swordgreenScore}
+    sword wall > killBoth  
     bullet red > {bulletred} score={bulletredScore}
     bullet blue > {bulletblue} score={bulletblueScore}
     bullet green > {bulletgreen} score={bulletgreenScore}
-    bullet wall > killBoth           
+    bullet wall > killBoth      
   TerminationSet
     LinkDead score=-1 win=False
     Timeout limit={timelimit} win=True
     Scoreout limit={scorelimit} win=True
 """
-def evaluate(fnn,iteration=20,isScreen=False):
+def evaluate(fnn,iteration=5,isScreen=False,without=0):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,mapgenerator,nowlevel
+  global rules
   if __name__ == "__main__":
     from vgdl.core import VGDLParser
     TotalScore = 0.
@@ -363,53 +367,26 @@ def evaluate(fnn,iteration=20,isScreen=False):
       zelda_this_level = ''.join(zelda_level_list)
       #print zelda_this_level
       game = VGDLParser.playGame(now_zelda_game, zelda_this_level, fnn = fnn , isScreen=False)
-      TotalScore += (game.score/float(scorelimit))
+      if(without == 0):
+        TotalScore += (game.score/float(scorelimit))
+      else:
+        TotalScore += game.score
     return TotalScore/float(iteration)
 
-def evaulateGame():
+def evaulateGame(without = 0):
   global zelda_game,now_zelda_game,rules
   #buildNetWork
   net = buildNetwork(336,10,8,hiddenclass=SigmoidLayer)
- 
-  #randomMove
-  avg = 0
-  oldlink = rules[3]
-  rules[3] = rules[3].replace('random=0','random=1')
-  print rules[3]
-  setRule(rules)
-  print "randomPlay"
-  for i in range(10):
-    avg += evaluate(net)
-  """
-  rules[3] = 'ShootNNSprite stype=sword israndom=1'
-  setRule(rules)
-  print "randomShootNNSprite"
-  for i in range(20):
-    avg += evaluate(net)
-  rules[3] = 'ShootNNSprite stype=bullet israndom=1'
-  setRule(rules)
-  print "randomShootNNSprite"
-  for i in range(20):
-    avg += evaluate(net)
-  """
-  if(avg / 10.0 > 0.4):
-    return -1,net
-
   from pybrain.optimization import SNES
   from pybrain.optimization import OriginalNES
   from pybrain.optimization import GA
   from numpy import ndarray
-
-  rules[3] = oldlink
-  print "oldlink........."+oldlink
   setRule(rules)
   best = 0
-  print "SNES starting......"
-  algo = SNES(lambda x: evaluate(x), net, verbose=True)
-  #algo = GA(lambda x: evaluate(x), net, verbose=True)
-  #algo = OriginalNES(lambda x: evaluate(x), net, verbose=True, desiredEvaluation=0.85)
-  episodesPerStep = 5
-  for i in range(5):
+  #SNES
+  algo = SNES(lambda x: evaluate(x,without=without), net, verbose=True)
+  episodesPerStep = 10
+  for i in range(10):
     algo.learn(episodesPerStep)
     print net.params
     if isinstance(algo.bestEvaluable, ndarray):
@@ -423,13 +400,30 @@ def evaulateGame():
         #too hard
         return -1,net
       """
+  #Standard NES
+  """
+  net = buildNetwork(108,10,8,hiddenclass=SigmoidLayer)
+  algo = OriginalNES(lambda x: evaluate(x), net, verbose=True)
+  episodesPerStep = 2
+  for i in range(5):
+    algo.learn(episodesPerStep)
+    print net.params
+    if isinstance(algo.bestEvaluable, ndarray):
+      net._setParameters(algo.bestEvaluable)
+    else:
+      net = algo.bestEvaluable
+    g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
+    print >> g,str(net.params) + '\n' + "Standard NES:" + str(algo.bestEvaluation) + '\n'
+    g.close()
+    if algo.bestEvaluation > best:
+      best = algo.bestEvaluation
+  """
   print now_zelda_game
   return best,net
 def setRule(thisrules):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules,mapgenerator
-  global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
   rules = thisrules
-  print thisrules
+  #print thisrules
   now_zelda_game = zelda_game
   now_zelda_game = now_zelda_game.replace('{redmove}',thisrules[0])
   now_zelda_game = now_zelda_game.replace('{greenmove}',thisrules[1])
@@ -491,10 +485,9 @@ def setRule(thisrules):
   now_zelda_game = now_zelda_game.replace('{bulletred}',thisrules[54])
   now_zelda_game = now_zelda_game.replace('{bulletblue}',thisrules[55])
   now_zelda_game = now_zelda_game.replace('{bulletgreen}',thisrules[56])
-
 def initial():
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,rules
-  global scoremaxlimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
+  global scorelimit,redlimit,greenlimit,bluelimit,timelimit,damagelimit,widthlimit,initialrate,dosteplimit,brithlimit,deadlimit
   #initial
   rules[0] = random.choice(moveType)
   rules[1] = random.choice(moveType)
@@ -566,7 +559,6 @@ def initial():
   rules[43]= str(random.choice(damagelimit))
   rules[44]= str(random.choice(damagelimit))
   """
-  
   #level from page https://gamedevelopment.tutsplus.com/tutorials/generate-random-cave-levels-using-cellular-automata--gamedev-9664
   rules[45]= random.choice(widthlimit)
   rules[46]= random.choice(brithlimit)
@@ -583,209 +575,84 @@ def initial():
   rules[57]= random.choice(connectednesslimit)
   setRule(rules)
   #randomGame
-  
+
+def certainInitial():
+  global rules
+  rules[0] = "Chaser stype=link"
+  rules[1] = "CounterClockwiseSprite"
+  rules[2] = "ClockwiseSprite"
+  rules[3] = "ShootNNSprite stype=bullet israndom=0 ismove=1"
+  rules[4] = "teleportSprite"
+  rules[5] = "teleportSprite"
+  rules[6] = "teleportSprite"
+  rules[7] = "teleportPartner"
+  rules[8] = "teleportSprite"
+  rules[9] = "killPartner"
+  rules[10] = '0'
+  rules[11] = '0'
+  rules[12] = '0'
+  rules[13] = '-1'
+  rules[14] = '0'
+  rules[15] = '0'
+  rules[16] = '0'
+  rules[17] = '-1'
+  rules[18] = '-1'
+  rules[19] = '1'
+  rules[20] = '0'
+  rules[21] = '0'
+  #score limit from paper
+  rules[22] = '5'
+  #red green blue from my own experience
+  rules[23] = 5
+  rules[24] = 5
+  rules[25] = 5
+  #timelimit accoring to my own experience
+  rules[26] = '100'
+
+  #damage from my own experience
+  rules[27]= 6
+  rules[28]= 3
+  rules[29]= 2
+  rules[30]= 10
+  rules[31]= 7
+  rules[32]= 2
+  rules[33]= 1
+  rules[34]= 3
+  rules[35]= 7
+  rules[36]= 6
+  rules[37]= 1
+  rules[38]= 10
+  rules[39]= 7
+  rules[40]= 4
+  rules[41]= 4
+  rules[42]= 10
+  rules[43]= 1
+  rules[44]= 1
+  rules[45]= 20
+  rules[46]= 5
+  rules[47]= 5
+  rules[48]= 0.3
+  rules[49]= 6
+  rules[50]= '3'
+  rules[51]= '3'
+  rules[52]= '5'
+  rules[53]= '2'
+  rules[54]= 'killSprite'
+  rules[55]= 'killSprite'
+  rules[56]= 'killBoth'
+  rules[57] = 0.8
+  setRule(rules)
+  #certainGame  
 #start
-initial()
-eva,net = evaulateGame()
-#f = open('/Users/skwang/Desktop/stats', 'a+')
-#print >> f,now_zelda_game,net,net.params,eva,red,blue,green
-"""
-nowgame = template
-nowgame = nowgame.replace('{red}',str(red))
-nowgame = nowgame.replace('{blue}',str(blue))
-nowgame = nowgame.replace('{green}',str(green))
-nowgame = nowgame.replace('{game}',now_zelda_game)
-netStr = '['
-for weigh in net.params:
-  netStr = netStr + str(weigh) + ','
-netStr = netStr[0:len(netStr)-2] + ']'
-nowgame = nowgame.replace('{net}',netStr)
-f = open('/Users/skwang/MechanicsResearch/'+str(int(time.time())) + '.py', 'w+')
-print >> f,nowgame
-print "written"
-"""
-lastEva = eva
-lastrules = rules
-nogame = 0
-i = 0
+certainInitial()
 while(i < 999999):
-  i = i + 1
-  thisrules = lastrules
-  #mutate
-  #print >> f,'Generation'+str(i)+':'
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[0] = random.choice(moveType)
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[1] = random.choice(moveType)
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[2] = random.choice(moveType)
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[3] = grammar.flatten("#link#")
-  #interaction
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[4] = random.choice(interactionType)
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[5] = random.choice(interactionType)
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[6] = random.choice(interactionType)
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[7] = random.choice(interactionType)
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[8] = random.choice(interactionType)
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[9] = random.choice(interactionType)
-  #score
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[10] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[11] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[12] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[13] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[14] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[15] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[16] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[17] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[18] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[19] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[20] = str(random.choice(score))
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[21] = str(random.choice(score))
-  #limit
-  if(int(random.uniform(1,27)) == 3):
-    thisrules[22] = int(random.choice(scoremaxlimit))
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[23] = int(random.choice(redlimit))
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[24] = int(random.choice(greenlimit))
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[25] = int(random.choice(bluelimit))
-  if(int(random.uniform(1,27)) == 3):  
-    thisrules[26] = str(random.choice(timelimit))
-  """
-  #damage
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[27]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[28]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[29]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[30]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[31]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[32]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[33]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[34]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[35]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[36]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[37]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[38]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[39]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[40]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[41]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[42]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[43]= str(random.choice(damagelimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[44]= str(random.choice(damagelimit))
-  """
-  #level
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[45]= int(random.choice(widthlimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[46]= int(random.choice(brithlimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[47]= int(random.choice(deadlimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[48]= random.choice(initialrate)
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[49]= int(random.choice(dosteplimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[50]= str(int(random.choice(redcooldownlimit)))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[51]= str(random.choice(greencooldownlimit))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[52]= str(int(random.choice(bluecooldownlimit)))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[53]= str(int(random.choice(scooldownlimit)))
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[54]= random.choice(bulletlimit)
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[55]= random.choice(bulletlimit)
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[56]= random.choice(bulletlimit)
-  if(int(random.uniform(1,27)) == 3): 
-    thisrules[57]= random.choice(connectednesslimit)
-  #related rules if no interaction get score the game will be weried
-  if(thisrules[4] == "no"):
-    thisrules[10] = '0'
-  if(thisrules[5] == "no"):
-    thisrules[11] = '0'
-  if(thisrules[6] == "no"):
-    thisrules[12] = '0'
-  if(thisrules[7] == "no"):
-    thisrules[13] = '0'
-  if(thisrules[8] == "no"):
-    thisrules[14] = '0'
-  if(thisrules[9] == "no"):
-    thisrules[15] = '0'
-  setRule(thisrules)  
   eva,net = evaulateGame()
-  if(eva > lastEva):
-    lastEva = eva
-    lastrules = thisrules
-    #f = open('/Users/skwang/Desktop/stats', 'a+')
-    #print >> f,now_zelda_game,net,net.params,eva,red,blue,green
-    nowgame = template
-    nowgame = nowgame.replace('{red}',str(red))
-    nowgame = nowgame.replace('{blue}',str(blue))
-    nowgame = nowgame.replace('{green}',str(green))
-    nowgame = nowgame.replace('{game}',now_zelda_game)
-    nowgame = nowgame.replace('{width}',str(thisrules[45]))
-    nowgame = nowgame.replace('{brith}',str(thisrules[46]))
-    nowgame = nowgame.replace('{dead}',str(thisrules[47]))
-    nowgame = nowgame.replace('{density}',str(thisrules[48]))
-    nowgame = nowgame.replace('{time}',str(thisrules[49]))
-    nowgame = nowgame.replace('{connect}',str(thisrules[57]))
-    netStr = '['
-    for weigh in net.params:
-      netStr = netStr + str(weigh) + ','
-    netStr = netStr[0:len(netStr)-2] + ']'
-    nowgame = nowgame.replace('{net}',netStr)
-    g = open(os.path.dirname(os.path.realpath(__file__))+"/"+str(int(time.time())) + 'Generation'+str(i) + 'Eva' + str(eva)+'.py', 'w+')
-    print >> g,nowgame
-    print "written"
-    g.close()
-    nogame = 0
-  else:
-    setRule(lastrules)
-    nogame=nogame+1
-    if(nogame>=10):
-      initial()
-      nogame = 0
-      eva,net = evaulateGame()
-      #f = open('/Users/skwang/Desktop/stats', 'a+')
-      #print >> f,"new generation",now_zelda_game,net,net.params,eva,red,blue,green
-      lastEva = eva
-      lastGame = now_zelda_game
-      i = 0
+  rules[22] = '100'
+  eva100,net100 = evaulateGame()
+  rules[22] = '5'
+  evawithoutmaximumscore,netwithout = evaulateGame(without=1)
+  g = open(os.path.dirname(os.path.realpath(__file__))+"/whetherTheScore.txt", 'a+')
+  print >> g,'evaulation is ' + str(eva * 5) + '\n'
+  print >> g,'evaulation is ' + str(eva100 * 100) + '\n'
+  print >> g,'evaulation without maximum score is ' + str(evawithoutmaximumscore) + '\n'
+  g.close()

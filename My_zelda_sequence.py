@@ -34,6 +34,7 @@ redcooldownlimit = range(1,6,1)
 greencooldownlimit = range(1,6,1)
 bluecooldownlimit = range(1,6,1)
 scooldownlimit = range(1,6,1)
+connectednesslimit = [0.5,0.6,0.7,0.8,0.9,0.95]
 class generatedMap(object):
   width =64
   brithlimit = 4
@@ -75,6 +76,117 @@ class generatedMap(object):
                   else:
                       newMap[x + y * self.width] = " "
       return newMap
+  def generateWithMetrics(self,connectedness = 0.8,openness = 0):
+    level_list = []
+    zelda_level = ""
+    tryCount = 0
+    while True:
+      tryCount+=1
+      #init level
+      level_list = []
+      zelda_level = ""
+      """
+      for i in range(4096):
+        if(i < 4096 * density):
+          level_list.append('w')
+        else:
+          level_list.append(' ')
+      random.shuffle(level_list)
+      """
+      for i in range(self.width * self.width):
+        if(random.uniform(0,1) < self.density):
+          level_list.append('w')
+        else:
+          level_list.append(' ')
+      #connect
+      for i in range(self.simulationtime):
+          level_list = self.doSimulationStep(level_list)
+      #count the total ground
+      groundCount = 0
+      emptytiles = []
+      pos = 0
+      for grid in level_list:
+        if(grid == " "):
+          emptytiles.append(pos)
+          groundCount+=1
+        pos+=1
+      #find the connected area
+      connectedareas = []
+      #start finding
+      while True:
+        #find the flood initial point
+        while True:
+          chosengridPos = int(random.uniform(0,len(level_list)))
+          chosengrid = level_list[chosengridPos]
+          if(chosengrid == " "):
+            exist = False
+            for connectedarea in connectedareas:
+              if chosengridPos in connectedarea:
+                exist = True
+            if(exist == False):
+              break
+        connectedareas.append(self.flood(chosengridPos,level_list))
+        totalLength = 0
+        for connectedarea in connectedareas:
+          totalLength += len(connectedarea)
+        if(totalLength >= groundCount):
+          break
+      maxLength = 0
+      for connectedarea in connectedareas:
+        if len(connectedarea) > maxLength:
+          maxLength = len(connectedarea)
+      #print maxLength,groundCount,connectedareas
+      #openness
+      opennessCount = 0
+      for empty in emptytiles:
+        if empty % self.width != 0 and empty - 1 not in connectedarea and level_list[empty - 1] != " ":
+          continue
+        if empty % self.width != self.width - 1 and empty + 1 not in connectedarea and level_list[empty + 1] != " ":
+          continue
+        if empty >= self.width and empty - self.width not in connectedarea and level_list[empty - self.width] != " ":
+          continue
+        if empty < self.width * (self.width - 1) and empty + self.width not in connectedarea and level_list[empty + self.width] != " ":
+          continue
+        opennessCount+=1
+      if float(opennessCount)/float(groundCount) >= openness and float(maxLength)/float(groundCount) >= connectedness:
+        break
+    #print tryCount
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
+    zelda_level = zelda_level + '\n'
+    for i in range(self.width * self.width):
+      if(i % self.width == 0):
+        zelda_level = zelda_level + 'x'
+      zelda_level = zelda_level + level_list[i]
+      if(i % self.width == self.width - 1):
+        zelda_level = zelda_level + 'x\n'
+    for i in range(self.width+2):
+      zelda_level = zelda_level + 'x'
+    return zelda_level
+  def flood(self,pos,level_list):
+    connectedarea = [pos]
+    while True:
+      lastLen = len(connectedarea)
+      for grid in connectedarea:
+        if(grid % self.width != 0):
+          #noleft
+          if grid - 1 not in connectedarea and level_list[grid - 1] == " ":
+            connectedarea.append(grid - 1)
+        if(grid % self.width != self.width - 1):
+          #noright
+          if grid + 1 not in connectedarea and level_list[grid + 1] == " ":
+            connectedarea.append(grid + 1)
+        if(grid >= self.width):
+          #notop
+          if grid - self.width not in connectedarea and level_list[grid - self.width] == " ":
+            connectedarea.append(grid - self.width)
+        if(grid < self.width * (self.width - 1)):
+          #nobottom
+          if grid + self.width not in connectedarea and level_list[grid + self.width] == " ":
+            connectedarea.append(grid + self.width)
+      if lastLen == len(connectedarea):
+        break
+    return connectedarea
   def generate(self):
     #init level
     level_list = []
@@ -199,6 +311,7 @@ BasicGame
 """
 def evaluate(fnn,iteration=20,isScreen=False):
   global zelda_level,zelda_game,now_zelda_game,red,blue,green,scorelimit,mapgenerator,nowlevel
+  global rules
   if __name__ == "__main__":
     from vgdl.core import VGDLParser
     TotalScore = 0.
@@ -206,7 +319,7 @@ def evaluate(fnn,iteration=20,isScreen=False):
       redCount = 0
       greenCount = 0
       blueCount = 0
-      thislevel = mapgenerator.generate()
+      thislevel = mapgenerator.generateWithMetrics(connectedness=rules[57])
       nowlevel = thislevel
       zelda_level_list = list(thislevel)
       #link
@@ -559,6 +672,7 @@ def initial():
   rules[54]= random.choice(bulletlimit)
   rules[55]= random.choice(bulletlimit)
   rules[56]= random.choice(bulletlimit)
+  rules[57]= random.choice(connectednesslimit)
   setRule(rules)
   #randomGame
 
@@ -626,6 +740,7 @@ def certainInitial():
   rules[54]= 'killSprite'
   rules[55]= 'killSprite'
   rules[56]= 'killBoth'
+  rules[57] = 0.8
   setRule(rules)
   #certainGame  
 #start
@@ -1176,7 +1291,7 @@ while(i < 999999):
       direction+=1
     else:
       direction=0
-      pos = 0
+      pos += 1
   elif(pos == 50):
     thisrules[pos] = str(redcooldownlimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
@@ -1198,7 +1313,7 @@ while(i < 999999):
       direction+=1
     else:
       direction=0
-      pos = 0
+      pos +=1
   elif(pos == 52):
     thisrules[pos] = str(bluecooldownlimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
@@ -1209,7 +1324,7 @@ while(i < 999999):
       direction+=1
     else:
       direction=0
-      pos = 0
+      pos +=1
   elif(pos == 53):
     thisrules[pos] = str(scooldownlimit[direction])
     g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
@@ -1250,6 +1365,17 @@ while(i < 999999):
     print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
     g.close()
     if(direction < len(bulletlimit) - 1):
+      direction+=1
+    else:
+      direction=0
+      pos +=1
+  elif(pos == 57):
+    thisrules[pos] = connectednesslimit[direction]
+    g = open(os.path.dirname(os.path.realpath(__file__))+"/stats"+str(threadnumber)+".txt", 'a+')
+    #print >> g,getGameByRule(thisrules)
+    print >> g,'rule no ' + str(pos) + ' is ' + str(thisrules[pos])
+    g.close()
+    if(direction < len(connectednesslimit) - 1):
       direction+=1
     else:
       direction=0
