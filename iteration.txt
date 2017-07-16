@@ -1,0 +1,36 @@
+evaulation is 1.0validation is -0.15 and iteration per game is 1
+
+evaulation is 0.7validation is 0.07 and iteration per game is 2
+
+evaulation is 0.6validation is -0.09 and iteration per game is 3
+
+evaulation is 0.35validation is -0.16 and iteration per game is 4
+
+evaulation is 0.4validation is -0.15 and iteration per game is 5
+
+evaulation is 0.433333333333validation is -0.07 and iteration per game is 6
+
+evaulation is 0.285714285714validation is -0.07 and iteration per game is 7
+
+evaulation is 0.375validation is 0.02 and iteration per game is 8
+
+evaulation is 0.244444444444validation is -0.06 and iteration per game is 9
+
+evaulation is 0.3validation is -0.04 and iteration per game is 10
+
+evaulation is 0.236363636364validation is 0.01 and iteration per game is 11
+
+evaulation is 0.2validation is -0.04 and iteration per game is 12
+
+evaulation is 0.353846153846validation is 5.55111512313e-18 and iteration per game is 13
+
+evaulation is 0.185714285714validation is 0.1 and iteration per game is 14
+
+evaulation is 0.24validation is 0.05 and iteration per game is 15
+
+evaulation is 0.1875validation is 0.05 and iteration per game is 16
+
+evaulation is 0.223529411765validation is -0.06 and iteration per game is 17
+
+evaulation is 0.244444444444validation is -0.08 and iteration per game is 18
+
